@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/elementUI.css">
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/elemenyUI.js"></script>
+<link rel="stylesheet" href="../../css/elementUItheme/pagination.css">
+<link rel="stylesheet" href="../../css/elementUItheme/button.css">
+</head>
+<style>
+	.font{
+		font-size: 16px;
+	}
+	.user>div{
+		font-size: 16px;
+		line-height: 40px;
+	}
+	.user{
+		margin-left: 20px;
+	}
+	.center{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 20px 0;
+	}
+	.margin{
+		margin-right: 20px;
+		text-align:right;
+		width: 100px;
+	}
+
+	[v-cloak] {
+		display: none;
+	}
+</style>
+<body>
+	<div id="app" v-cloak>
+		
+		<el-tabs v-model="activeName" @tab-click="handleClick">
+			<el-tab-pane label="用户信息" name="1">
+				<div class="user">
+					<div><span class="margin">姓名</span>{{userData.userName}}</div>
+					<div><span class="margin">角色</span>{{userData.roleName}}</div>
+					<div><span class="margin">本次登录</span>{{userData.curLoginTime}}</div>
+					<div><span class="margin">登录地址</span>({{userData.address}}){{userData.loginIp}}</div>
+					<div><span class="margin">上次登录</span>{{userData.lastLoginTime}}</div>
+				</div>
+			</el-tab-pane>
+
+			<el-tab-pane label="修改密码" name="2">
+				<div class="center"><img src="../../img/logo/u183.png" alt=""></div>
+				<div class="center">
+					<span class="margin">账号</span><el-input v-model="phoneNo" maxlength="11" style="width: 300px" placeholder="请输入账号"></el-input>
+				</div>
+				<div class="center">
+					<span class="margin">原密码</span><el-input v-model="oldPwd" maxlength="16" style="width: 300px" placeholder="请输入原密码"></el-input>
+				</div>
+				<div class="center">
+					<span class="margin">新密码</span><el-input v-model="newPwd" style="width: 300px" maxlength="16" minlength="6" placeholder="请输入新密码"></el-input>
+				</div>
+				<div class="center">
+					<span class="margin">确认新密码</span><el-input v-model="sureNewPwd" style="width: 300px" maxlength="16" minlength="6" placeholder="请再次输入新密码"></el-input>
+				</div>
+				<div class="center">
+					<el-button @click="sub" style="width:200px">确定</el-button>
+				</div>
+			</el-tab-pane>
+
+			<el-tab-pane label="操作日志" name="3">
+				<!-- <div class="center"><img src="../../img/logo/u183.png" alt=""></div> -->
+				<el-table :data="tableData" border style="width: 100%">
+					<el-table-column prop="id" label="编号" width="180"></el-table-column>
+					<el-table-column prop="operatorName" label="操作者姓名" width="180"></el-table-column>
+					<el-table-column prop="ip" label="IP地址"></el-table-column>
+					<el-table-column prop="createTime" label="日志的创建时间"></el-table-column>
+					<el-table-column prop="receiverName" label="被操作者姓名"></el-table-column>
+					<el-table-column prop="typeName" label="操作类型"></el-table-column>
+			  </el-table>
+			  <el-pagination layout="prev, pager, next" :total="total" @current-change="change"></el-pagination>
+			</el-tab-pane>
+		
+		</el-tabs>
+		<!-- <el-alert title="修改密码成功" type="success" description="即将返回到登录页面..." show-icon></el-alert> -->
+	</div>
+
+	<script src="../../js/constant.js"></script>
+	<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="../../js/jq.js"></script>
+	<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+	<script type="text/javascript" src="../../js/common.js"></script>
+	<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript">
+	new Vue({
+		el:"#app",
+		data:{
+			activeName: '1',
+			userData:{},
+			phoneNo:"",
+			oldPwd:"",
+			newPwd:"",
+			sureNewPwd:"",
+			tableData:[],
+			pageIndex:1,
+			pageSize:10,
+			total:1
+		},
+		methods: {
+			//分页改变时
+			change(e){
+				$.ajax({
+					type: 'get',
+					url: pageUrl + userPackageName + '/backend_user/getUserOperationLog',
+					data: {
+						pageIndex:e,
+						pageSize:this.pageSize,
+						userId:sessionStorage.ID,
+					},
+					success: (obj) => {
+					console.log(obj);
+					this.tableData = obj.rows;
+					// this.total = obj.total;
+					// this.userData = obj.data;
+					// window.location.href = "../management/roles.html"
+					},
+					err:(err) => {
+						console.log(err);
+					}
+				});
+            },
+			handleClick(tab, event) {
+				console.log(tab.name, event);
+				if(tab.name == 3){
+					$.ajax({
+					type: 'get',
+					url: pageUrl + userPackageName + '/backend_user/getUserOperationLog',
+					data: {
+						pageIndex:this.pageIndex,
+						pageSize:this.pageSize,
+						userId:sessionStorage.ID,
+					},
+					success: (obj) => {
+					console.log(obj);
+					this.tableData = obj.rows;
+					this.total = obj.total;
+				},
+				err:(err) => {
+					console.log(err);
+				}
+			});
+				}
+			},
+			sub(){
+				$.ajax({
+				type: 'post',
+				url: pageUrl + userPackageName + '/backend_user/changeUserPwd',
+				data: {
+					phoneNo:this.phoneNo,
+					oldPwd:this.oldPwd,
+					newPwd:this.newPwd,
+					sureNewPwd:this.sureNewPwd,
+				},
+				success: (obj) => {
+					if(obj.code != 000000){
+						this.$message.error(obj.message);
+					} else if(obj.code == 000000){
+						this.$message.success("修改成功");
+						setTimeout(()=>{
+							window.open( "../../index.html")
+						},2500)
+					}
+				},
+			});
+			}
+		},
+		created(){
+			this.userData.userName = sessionStorage.userName;
+			this.userData.roleName = sessionStorage.roleName;
+			this.userData.curLoginTime = sessionStorage.curLoginTime;
+			this.userData.address = sessionStorage.address;
+			this.userData.loginIp = sessionStorage.loginIp;
+			this.userData.lastLoginTime = sessionStorage.lastLoginTime;
+			// $.ajax({
+			// 	type: 'get',
+			// 	url: pageUrl + userPackageName + '/backend_user/getMenuPermissList',
+			// 	data: {userId:sessionStorage.ID},
+			// 	success: (obj) => {
+			// 		console.log(obj);
+			// 		this.userData = obj.data;
+			// 	},
+			// });
+		}
+	})
+</script>
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!-- 菜单管理 -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+</head>
+<!-- 引入样式 -->
+	<script src="../../js/vuejs/2.6.10/vue.js"></script>
+	<script src="../../js/axios.min.js"></script>
+	<link rel="stylesheet" href="../../css/elementUI.css">
+	<link rel="stylesheet" href="../../css/elementUItheme/button.css">
+	<link rel="stylesheet" href="../../css/elementUItheme/pagination.css">
+	<link rel="stylesheet" href="../../css/newstyle.css">
+	<!-- <link rel="stylesheet" href="../../css/elementUItheme/switch.css"> -->
+	<!-- 引入组件库 -->
+	<script src="../../js/elemenyUI.js"></script>
+	<script src="../../js/constant.js"></script>
+	<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<style>
+	[v-cloak] {
+		opacity: 0;
+	}
+
+	.formSubmitBox {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.el-table__row--level-1 {
+		background-color: oldlace !important;
+	}
+
+	.font {
+		font-size: 0.28rem;
+		color: #606266;
+	}
+
+	.btn {
+		position: relative;
+		left: 0.2rem;
+		top: 0.1rem;
+		cursor: pointer;
+	}
+</style>
+
+<body>
+	<div id="app" v-cloak>
+			<!-- <el-button type="primary" @click="window.location.href='./addUser.html'">添加菜单</el-button> -->
+		<el-button type="primary" @click="oneAddMenuFlag = true" style="margin-bottom: 10px;">添加菜单</el-button>
+		<!--	点击左上角添加			一级菜单按钮	-->
+		<el-dialog title="添加一级菜单" :visible.sync="oneAddMenuFlag">
+			<el-form :model="oneMenu" :rules="rules" ref="oneMenu">
+				<el-form-item label="菜单名称" :label-width="formLabelWidth">
+					<el-input v-model="oneMenu.menuName" style="width: 80%" placeholder="请输入菜单名称" autocomplete="off">
+					</el-input>
+				</el-form-item>
+				<el-form-item label="排序" :label-width="formLabelWidth">
+					<el-input v-model="oneMenu.sort" style="width: 80%" placeholder="请输入菜单排序" autocomplete="off">
+					</el-input>
+				</el-form-item>
+
+				<el-form-item label="状态" :label-width="formLabelWidth">
+					<el-switch v-model='oneMenu.state' active-text="开启" inactive-text="关闭"></el-switch>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer formSubmitBox">
+				<el-button type="primary" @click="oneAddMenu">确 定</el-button>
+				<el-button @click="oneAddMenuClean">取 消</el-button>
+			</div>
+		</el-dialog>
+
+		<!-- 编辑一级菜单 -->
+		<el-dialog title="编辑一级菜单" :visible.sync="editOneMenuFlag">
+			<el-form :model="editOneTemporaryData">
+				<el-form-item label="菜单名称" :label-width="formLabelWidth">
+					<el-input v-model="editOneTemporaryData.menuName" style="width: 80%" placeholder="请输入菜单名称"
+						autocomplete="off"></el-input>
+				</el-form-item>
+				<el-form-item label="排序" :label-width="formLabelWidth">
+					<el-input v-model="editOneTemporaryData.sortNum" style="width: 80%" placeholder="请输入菜单排序"
+						autocomplete="off"></el-input>
+				</el-form-item>
+
+				<el-form-item label="状态" :label-width="formLabelWidth">
+					<el-switch v-model='editOneTemporaryData.state' active-text="开启" inactive-text="关闭"></el-switch>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer formSubmitBox">
+				<el-button type="primary" @click="editMenuSub">确 定</el-button>
+				<el-button @click="editOneMenuFlag = false">取 消</el-button>
+			</div>
+		</el-dialog>
+
+		<!--	点击添加子菜单添加		每一项添加二级菜单按钮	-->
+		<el-dialog title="添加二级菜单" :visible.sync="twoAddMenuFlag">
+			<el-form :model="twoMenu">
+				<el-form-item label="菜单名称" :label-width="formLabelWidth">
+					<el-input v-model="twoMenu.menuName" style="width: 80%" placeholder="请输入菜单名称" autocomplete="off">
+					</el-input>
+				</el-form-item>
+				<el-form-item label="排序" :label-width="formLabelWidth">
+					<el-input v-model="twoMenu.sort" style="width: 80%" placeholder="请输入菜单排序" autocomplete="off">
+					</el-input>
+				</el-form-item>
+				<el-form-item label="菜单URL" :label-width="formLabelWidth">
+					<el-input v-model="twoMenu.url" style="width: 80%" placeholder="请输入菜单URL" autocomplete="off">
+					</el-input>
+				</el-form-item>
+				<el-form-item label="状态" :label-width="formLabelWidth">
+					<el-switch v-model='twoMenu.state' active-text="开启" inactive-text="关闭"></el-switch>
+				</el-form-item>
+			</el-form>
+
+			<div style="margin-left:80px">
+				<p><span>功能名称</span><span style="margin-left:30%">链接目标</span></p>
+				<el-input placeholder="请输入功能名称" v-model="functionName" clearable style="width: 40%"> </el-input>
+				<el-input placeholder="请输入链接目标" v-model="targetUrl" clearable style="width:40%"> </el-input>
+				<img src="../../img/logo/加1.png" alt="" style="position: relative;top: 6px;left: 6px;cursor: pointer;"
+					@click="pushSonMenu">
+			</div>
+
+			<div style="margin: 10px 0 20px  80px;width:70%;height: 40px;border: 1px solid #C0C4CC;border-radius:5px;line-height: 40px"
+				v-for="(item,index) in childrenMenu" :key="index">
+				<span style="margin-left: 1%">功能名称:{{item.btnName}}</span>
+				<span style="margin-left: 30%">链接目标:{{item.btnUrl}}</span>
+				<img src="../../img/logo/减.png" alt="" style="position: relative;top: 6px;left: 30%;cursor: pointer;"
+					@click="delSonMenu">
+			</div>
+			<div slot="footer" class="dialog-footer formSubmitBox">
+				<el-button type="primary" @click="twoAddMenu">确 定</el-button>
+				<el-button @click="twoAddMenuClean">取 消</el-button>
+			</div>
+		</el-dialog>
+
+		<!-- 编辑二级菜单 -->
+		<el-dialog title="编辑二级菜单" :visible.sync="editTwoAddMenuFlag">
+			<el-form :model="editTwoMenuData">
+				<el-form-item label="菜单名称" :label-width="formLabelWidth">
+					<el-input v-model="editTwoMenuData.menuName" style="width: 80%" placeholder="请输入菜单名称"
+						autocomplete="off"></el-input>
+				</el-form-item>
+				<el-form-item label="排序" :label-width="formLabelWidth">
+					<el-input v-model="editTwoMenuData.sortNum" style="width: 80%" placeholder="请输入菜单排序"
+						autocomplete="off"></el-input>
+				</el-form-item>
+				<el-form-item label="菜单URL" :label-width="formLabelWidth">
+					<el-input v-model="editTwoMenuData.menuUrl" style="width: 80%" placeholder="请输入菜单URL"
+						autocomplete="off"></el-input>
+				</el-form-item>
+				<el-form-item label="状态" :label-width="formLabelWidth">
+					<el-switch v-model='editTwoMenuData.state' active-text="开启" inactive-text="关闭"></el-switch>
+				</el-form-item>
+			</el-form>
+
+			<div style="margin-left:80px">
+				<p><span>功能名称</span><span style="margin-left:30%">链接目标</span></p>
+				<el-input placeholder="请输入功能名称" v-model="functionName" clearable style="width: 40%"> </el-input>
+				<el-input placeholder="请输入链接目标" v-model="targetUrl" clearable style="width:40%"> </el-input>
+				<img src="../../img/logo/加1.png" alt="" style="position: relative;top: 6px;left: 6px;cursor: pointer;"
+					@click="pushSonMenu2">
+			</div>
+
+			<!-- <div style="margin: 10px 0 20px  80px;width:80%;height: 40px;border: 1px solid #C0C4CC;border-radius:5px;line-height: 40px"
+				v-for="(item,index) in editTwoMenuData.operationes" :key="index">
+				<span style="margin-left: 1%">功能名称:{{item.btnName}}</span>
+				<span style="margin-left: 30%">链接目标:{{item.btnUrl}}</span>
+				<img src="../../img/logo/减.png" alt="" style="position: relative;top: 6px;left: 30%;cursor: pointer;"
+					@click="delSonMenu2(index)">
+			</div> -->
+			<div style="margin-left:80px" v-for="(item,index) in editTwoMenuData.operationes" :key="index">
+				<p><span>功能名称</span><span style="margin-left:30%">链接目标</span></p>
+				<el-input placeholder="功能名称" disabled :value="item.btnName" clearable style="width: 40%"> </el-input>
+				<el-input placeholder="链接目标" disabled :value="item.btnUrl" clearable style="width:40%"> </el-input>
+				<img src="../../img/logo/减.png" alt="" style="position: relative;top: 6px;left: 6px;cursor: pointer;"
+					@click="delSonMenu2(index)">
+			</div>
+			<div slot="footer" class="dialog-footer formSubmitBox">
+				<el-button type="primary" @click="editTwoMenuSub">确 定</el-button>
+				<el-button @click="editTwoAddMenuFlag=false">取 消</el-button>
+			</div>
+		</el-dialog>
+
+		<el-table v-loading="loading" :data="tableData" style="width: 100%" 
+			style="width: 100%;margin-bottom: 0.4rem;" border row-key="id">
+			<el-table-column prop="id" label="序号" width="100"> </el-table-column>
+			<el-table-column prop="menuName" label="菜单名称" width="280"> </el-table-column>
+			<el-table-column prop="type" label="菜单类型" width="160"> </el-table-column>
+			<el-table-column prop="sortNum" label="排序" width="80"> </el-table-column>
+			<el-table-column prop="menuUrl" label="菜单URL"> </el-table-column>
+			<el-table-column prop="state" label="状态" width="160"> </el-table-column>
+			<el-table-column prop="menuName" label="操作" width="280">
+				<template slot-scope="scope">
+					<el-button type="text" @click="detail(scope.row)">编辑</el-button>
+					<el-button @click="handleOrder(scope.row)" type="text" v-if="scope.row.level === 1">添加子菜单</el-button>
+					<el-button type="text" @click="del(scope.row)">删除</el-button>
+				</template>
+			</el-table-column>
+		</el-table>
+		<el-pagination  layout="prev, pager, next" :total="total" @current-change="change"></el-pagination>
+	</div>
+</body>
+<script>
+	new Vue({
+		el: '#app',
+		data: {
+			total:0,	//分页总条数
+			obj: 1,
+			editOneMenuFlag: false,
+			loading: false,
+			formLabelWidth: '20%',
+			pageIndex: '1',
+			pageSize: '10',
+			oneAddMenuFlag: false, //添加一级菜单遮罩flag
+			twoAddMenuFlag: false, //添加二级菜单遮罩flag
+
+			editTwoMenuData: {}, //编辑二级菜单时存放的数据
+
+			editTwoAddMenuFlag: false, //编辑二级菜单or三级菜单flag
+			editFlag: false,
+			addMenuFlag: false,
+			editData: {}, //编辑菜单显示数据
+			childrenMenu: [], //子菜单
+			editTwoSonMenuData: [], //二级菜单
+			functionName: '', //添加二级菜单的输入功能名称的绑定数据
+			targetUrl: '', //添加二级菜单的输入链接目标的绑定数据
+			tableData: [], //表格显示数据
+			editOneTemporaryData: {}, //编辑一级菜单临时数据
+			rules: {
+				menuName: [{
+						required: true,
+						message: '请输入菜单名称',
+						min: 3,
+						max: 5,
+						trigger: 'blur'
+					},
+					{
+						required: true,
+						message: '请输入菜单排序',
+						trigger: 'blur'
+					} 
+				],
+			},
+			ruleForm1: {
+				menuName: '',
+			},
+			oneMenu: { //一级菜单需要添加的数据
+				menuName: '',
+				sort: '',
+				state: true
+			},
+			// 编辑一级菜单的数据
+			editOneMenuForm: {
+				menuName: '',
+				sort: '',
+				state: true
+			},
+			editOneMenuData: {}, //修改一级菜单的临时数据
+			twoMenu: { //二级需要添加的菜单数据
+				menuName: '',
+				sort: '',
+				url: '',
+				state: true
+			},
+			form: {
+				name: '', //姓名
+				sort: '',
+				url: '',
+				state: '',
+			},
+			addSonFrom: {
+				menuName: '',
+				sort: '',
+				menuUrl: '',
+				state: '',
+
+				twoMenuName: '',
+				twoSort: '',
+				twoMenuUrl: '',
+				twoState: '',
+			},
+			control: [],
+			functionControl: "",
+			urlTarget: '',
+			form1: {
+				name: '',
+				region: '',
+				date1: '',
+				date2: '',
+				delivery: false,
+				type: [],
+				resource: '',
+				desc: ''
+			},
+		},
+		methods: {
+			change(e){
+				this.loading = true;
+				let children = [];
+				axios({
+						method: 'get',
+						url: pageUrl + userPackageName + `/permission/queryMenuList?pageIndex=${e}&pageSize=${this.pageSize}`,
+					})
+					.then((response) => {
+						let data = response.data.rows;
+						data.map(value => {
+							value.type === 0 ? value.type = "后台菜单" : value.type = "APP菜单";
+							value.state === 0 ? value.state = "正常" : value.state = "禁用";
+							value.children.map(val => {
+								val.state === 0 ? val.state = "正常" : val.state = "禁用";
+							})
+						});
+						console.log(children);
+						this.tableData = data;
+						console.log('菜单展示列表', response.data);
+						this.loading = false;
+					})
+					.catch(function (error) {
+						console.log(error);
+					});
+            },
+        
+			// 添加子菜单
+			handleOrder(e) {
+				console.log(e);
+				this.twoAddMenuFlag = true;
+			},
+
+			// 添加二级      push功能名称 加号图标
+			pushSonMenu() {
+				let data = {
+					"btnName": this.functionName,
+					"btnUrl": this.targetUrl
+				};
+				this.childrenMenu.push(data);
+				console.log(this.childrenMenu);
+			},
+			// 添加二级的子菜单      push功能名称 加号图标
+			pushSonMenu2() {
+				let data = {
+					"btnName": this.functionName,
+					"btnUrl": this.targetUrl
+				};
+				this.editTwoMenuData.operationes.push(data);
+				this.functionName = "";
+				this.targetUrl = "";
+				// console.log(this.childrenMenu);
+			},
+
+			//添加二级菜单  提交按钮
+			twoAddMenu() {
+				let data = {
+					operationStr: JSON.stringify(this.childrenMenu),
+					menuName: this.twoMenu.menuName,
+					parentId: 1,
+					state: this.twoMenu.state === true ? this.twoMenu.state = 0 : this.twoMenu.state = 1,
+					menuUrl: this.twoMenu.url,
+					level: 2,
+					sortNum: this.twoMenu.sort,
+					type: 0,
+					userId:sessionStorage.ID
+				}
+				$.ajax({
+					type:'post',
+					url:  pageUrl + userPackageName + '/permission/addMenu',
+					data:data,
+					success:(obj) => {
+						console.log(obj);
+						this.twoMenu.menuName = '';
+						this.twoMenu.sort = '';
+						this.twoMenu.url = '';
+						this.childrenMenu.length = 0
+						this.twoAddMenuFlag = false;
+						if(obj.code == "000000"){
+							this.$message({
+							message: '添加成功！',
+							type: 'success'
+						});
+						}
+					},
+				});
+			},
+			// 编辑二级菜单，提交按钮
+			editTwoMenuSub() {
+				let data = {
+					operationStr: JSON.stringify(this.editTwoMenuData.operationes),
+					menuName: this.editTwoMenuData.menuName,
+					parentId: this.editTwoMenuData.parentId,
+					state: this.editTwoMenuData.state == true ?  0 :  1,
+					menuUrl: this.editTwoMenuData.menuUrl,
+					level: '2',
+					sortNum: this.editTwoMenuData.sortNum,
+					type: '0',
+					id:this.editTwoMenuData.id,
+					userId:sessionStorage.ID
+				}
+				console.log("修改之后", data);
+
+				$.ajax({
+					type: 'post',
+					url: pageUrl + userPackageName + '/permission/updateMenu',
+					data: data,
+					success: (obj) => {
+						console.log("obj",obj);
+						if(obj.code == 000000){
+							this.$message({
+							message: '添加成功！',
+							type: 'success'
+						});
+						this.editTwoAddMenuFlag = false;
+						}
+					},
+				});
+			},
+			oneAddMenuClean() {
+				this.oneAddMenuFlag = false;
+				this.oneMenu.menuName = '';
+				this.oneMenu.sort = '';
+
+			},
+			// 添加子菜单（二级菜单） 弹窗取消按钮
+			twoAddMenuClean() {
+				this.twoAddMenuFlag = false;
+				this.twoMenu.menuName = "";
+				this.twoMenu.sort = "";
+				this.twoMenu.url = "";
+				this.functionName = "", 	
+				this.targetUrl = "",
+				this.childrenMenu.length = 0
+			},
+
+			// 功能控制------删除单个已添加的功能控制
+			delSonMenu(index) {
+				// console.log(index);
+				this.childrenMenu.splice(index, 1);
+			},
+
+			delSonMenu2(index) {
+				this.editTwoMenuData.operationes.splice(index, 1);
+			},
+			//编辑按钮
+			detail(e) {
+				let data = e;
+				console.log(e);
+				if (data.level == 1) {
+					this.editOneMenuFlag = true;
+					let data = Object.assign({}, e);
+					data.state == '正常' ? data.state = true : data.state = false;
+					this.editOneTemporaryData = data;
+				} else if (e.level == 2) {
+					this.editTwoAddMenuFlag = true;
+					let data1 = Object.assign({}, e);
+					data1.state == '0' ? data1.state = true : data1.state = false;
+					this.editTwoMenuData = data1;
+				}
+			},
+			// 编辑一级菜单提交按钮
+			editMenuSub() {
+				axios({
+					method: 'post',
+					url: pageUrl + userPackageName + '/permission/updateMenu',
+					params: {
+						operationStr: this.editOneTemporaryData.operationStr == null ? '' : this.editOneTemporaryData.operationStr,
+						menuName: this.editOneTemporaryData.menuName,
+						parentId: 0,
+						state: this.editOneTemporaryData.state === true ?  0 :  1,
+						level: 1,
+						sortNum: this.editOneTemporaryData.sortNum,
+						type: this.editOneTemporaryData.type === '后台菜单' ?  0 :  1,
+						id: this.editOneTemporaryData.id,
+						userId:sessionStorage.ID
+					}
+				})
+				.then((response) => {
+					console.log('1级菜单修改', response);
+					this.editOneMenuFlag = false;
+					this.refreshData();
+					this.$message({
+						message: '修改成功！',
+						type: 'success'
+					});
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+			
+			//删除菜单
+			del(e){
+				console.log(e);
+					this.$confirm('是否确定删除该菜单?', '提示', {
+						confirmButtonText: '确定',
+						cancelButtonText: '取消',
+						type: 'warning'
+						}).then(() => {
+							axios({
+								method: 'get',
+								url: pageUrl + userPackageName + `/permission/deleteMenu?id=${e.id}`,
+							})
+							.then((response) => {
+								console.log(response);
+								this.refreshData()
+								this.$message({
+									type: 'success',
+									message: '删除成功!'
+								});
+							})
+							.catch(function (error) {
+								console.log(error);
+							});
+						}).catch(() => {
+							this.$message({
+								type: 'info',
+								message: '已取消删除'
+							});          
+						});
+						
+      
+
+			},
+
+			//每次点击提交刷新数据
+			refreshData() {
+				this.loading = true;
+				axios({
+						method: 'get',
+						url: pageUrl + userPackageName + `/permission/queryMenuList?pageIndex=${this.pageIndex}&pageSize=${this.pageSize}`,
+					})
+					.then((response) => {
+						let data = response.data.rows;
+						data.map(val => {
+							val.type === 0 ? val.type = "后台菜单" : val.type = "APP菜单";
+							val.state === 0 ? val.state = "正常" : val.state = "禁用";
+						});
+						this.tableData = data;
+						this.total = response.data.total;
+						console.log('菜单展示列表', response.data);
+						this.loading = false;
+					})
+					.catch(function (error) {
+						console.log(error);
+					});
+
+			},
+			oneAddMenu() {
+			
+				axios({
+						method: 'post',
+						url: pageUrl + userPackageName + '/permission/addMenu',
+						params: {
+							menuName: this.oneMenu.menuName,
+							parentId: '0',
+							state: this.oneMenu.state === true ? this.oneMenu.state = 0 : this.oneMenu.state = 1,
+							level: '1',
+							sortNum: this.oneMenu.sort,
+							type: '0',
+						}
+					})
+					.then((response) => {
+						console.log('一级菜单修改成功', response);
+						this.$message({
+							message: '添加成功！',
+							type: 'success'
+						});
+						this.refreshData()
+					})
+					.catch(function (error) {
+						console.log(error);
+					});
+				this.oneAddMenuFlag = false;
+				this.oneMenu.menuName = '';
+				this.oneMenu.sort = '';
+				this.oneMenu.state = true;
+			},
+
+
+		},
+		created() {
+			this.loading = true;
+			this.refreshData()
+		},
+	})
+</script>
+
+</html>

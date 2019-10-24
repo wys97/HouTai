@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/dataTables.bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen" href="../../layui/css/layui.css">
+</head>
+<body>
+	<div>
+    	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        	<header style="height: 100%">
+        		<div align="left">
+	            	<table style="width: 100%">
+	                	<tr>
+	                   		<td>
+                   				<form class="form-inline" onsubmit="return false">
+									<div class="form-group">
+										借款方：
+										<input id="repaymentName" type="text" class="form-control" placeholder="借款方">
+										标类型：
+										<select class="form-control input-sm" id="bidType">
+											<option value="">全部</option>
+											<option value="1">新手标</option>
+											<option value="2">产权质押标</option>
+											<option value="3">应收款融资标</option>
+										</select>
+										状态：
+										<select class="form-control input-sm" id="status">
+											<option value="">全部</option>
+											<option value="8">待审核</option>
+											<option value="1">投标中</option>
+											<option value="2">待还款</option>
+											<option value="3">已还款</option>
+											<option value="4">审核拒绝</option>
+											<option value="5">流标</option>
+											<option value="6">逾期</option>
+											<option value="7">逾期还款</option>
+										</select>
+										首页显示：
+										<select class="form-control input-sm" id="isIndex">
+											<option value="">全部</option>
+											<option value="1">显示</option>
+											<option value="2">不显示</option>
+										</select>
+										<button id="searchBt" class="layui-btn layui-btn-sm" permission="financial:bid:query"><i class="layui-icon">&#xe615;</i>搜索</button>
+										<button id="resetBt" class="layui-btn layui-btn-sm" permission="financial:bid:query"><i class="layui-icon">&#xe9aa;</i>重置</button>
+									</div>
+								</form>
+                   			</td>
+	                   		<td align="right">
+	                   			<button class="layui-btn layui-btn-sm" onclick="addBid()" permission="financial:bid:check">
+	                            	<i class="layui-icon">&#xe608;</i>添加新手标
+	                            </button>
+	                   		</td>
+	                   	</tr> 
+	                </table>
+				</div>
+            </header>
+                
+			<div>
+            	<div class="widget-body no-padding">
+                	<table id="dt-table" class="table table-striped table-bordered table-hover" style="width:100%">
+                    	<thead>
+                        	<tr>
+                            </tr>                       
+                            <tr>
+                            	<th width="4%">id</th>
+                            	<th width="8%">招标编码</th>
+                                <th width="8%">标类型</th>
+                                <th width="8%">招标金额(元)</th>  
+                                <th width="6%">借款天数</th>
+                                <th width="5%">借款方</th>
+								<th width="6%">状态</th>
+								<th width="8%">是否首页显示</th>
+								<th width="12%">创建时间</th>
+								<th width="7%">到期时间</th>
+								<th>操作</th>
+                        	</tr>
+                    	</thead>
+                        <tbody>
+                        </tbody>
+                	</table>
+            	</div>
+        	</div>
+    	</div>
+	</div>
+</body>
+
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/datatables/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="../../js/plugin/datatables/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript" src="../../js/dateUtil.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+var example;
+
+var layer;
+layui.use(['layer','util'], function(){
+    layer = layui.layer;
+    var util = layui.util;
+    
+    function init(){
+    	example = 
+    		$('#dt-table').DataTable({
+    			"searching": false,
+            	"processing": true,
+            	"serverSide" : true,
+            	"ordering" :false,
+            	"language": {
+                    "url": "../../js/plugin/datatables/Chinese.lang"
+                },
+                "ajax": {
+                	"url" : domainName + "/api-P2P/bids/queryAll",
+                	"type":"get",
+                	"data":function(d){
+                		d.repaymentName = $("#repaymentName").val();
+                		d.bidType = $("#bidType").val();
+                		d.status = $("#status").val();
+                		d.isIndex = $("#isIndex").val();
+                	},
+                	"dataSrc": function (json) {
+            			json.recordsTotal=json.total;
+            			json.recordsFiltered=json.total;
+            			return json.data;
+            		},
+            		"error":function(xhr, textStatus, errorThrown){
+        				var msg = xhr.responseText;
+        				console.log(msg);
+        				if (xhr.status == 400) {
+        					layer.msg(JSON.parse(msg).message);
+        				} else if (xhr.status == 401) {
+        					localStorage.removeItem("token");
+        					layer.msg("token过期，请重新登录", {shift: -1, time: 1000}, function(){
+                                location.href = localStorage.getItem("loginUrl");
+                            });
+        				} else if (xhr.status == 403) {
+        					layer.msg('未授权');
+        				} else if (xhr.status == 500) {
+        					var info = JSON.parse(msg);
+        					var exception = info.exception;
+        					var message = info.message;
+        					layer.msg('系统错误：' + (exception ? exception : message));
+        				}
+        			}
+                },
+                "dom": "<'dt-toolbar'r>t<'dt-toolbar-footer'<'col-sm-10 col-xs-12 hidden-xs'i><'col-xs-12 col-sm-10' p v>>",
+                "columns": [
+					{ "data": "id", "defaultContent": ""},
+					{ "data": "code", "defaultContent": ""},
+					{ 
+						"data": "bidType",
+						"defaultContent": "",
+						"render": function (data, type, row) {
+							if(data =="1"){
+								return "新手标";
+							}else if(data =="2"){
+								return "产权质押标";
+							}else if(data =="3"){
+								return "应收款融资标";
+							}else if(data =="4"){
+								return "债权转让";
+							}
+							return "";
+						}
+					},
+					{ "data": "money", "defaultContent": ""},
+					{ "data": "repaymentDay", "defaultContent": ""},
+					{ "data": "repaymentName", "defaultContent": ""},
+                 	{ 
+						"data": "status",
+						"defaultContent": "",
+						"render": function (data, type, row) {
+							if(data =="8"){
+								return "待审核";
+							}else if(data =="1"){
+								return "投标中";
+							}else if(data =="2"){
+								return "待还款";
+							}else if(data =="3"){
+								return "已还款";
+							}else if(data =="4"){
+								return "审核拒绝";
+							}else if(data =="5"){
+								return "流标";
+							}else if(data =="6"){
+								return "逾期";
+							}else if(data =="7"){
+								return "逾期还款";
+							}
+							return "";
+						}
+					},{ 
+						"data": "isIndex",
+						"defaultContent": "",
+						"render": function (data, type, row) {
+							if(data =="1"){
+								return "是";
+							}else if(data =="2"){
+								return "否";
+							}
+							return "";
+						}
+					},
+ 					{ 
+ 						"data": "createTime",
+ 						"defaultContent": "",
+ 						"render": function (data, type, row) {
+ 							return dateFtt("yyyy-MM-dd hh:mm:ss",new Date(data));
+ 						}
+ 					}, 
+ 					{ 
+ 						"data": "endTime",
+ 						"defaultContent": "",
+ 						"render": function (data, type, row) {
+ 							if(data == null){
+ 								return "";
+ 							}
+ 							return dateFtt("yyyy-MM-dd",new Date(data));
+ 						}
+ 					}, 
+                     { 
+                     	"data": "", 
+                     	"defaultContent": "",
+                     	"render": function (data, type, row) {
+                     		var id = row['id'];
+                     		var status = row['status'];
+                     		var bidType = row['bidType'];
+                     		var bussessinessId = row['businessId'];
+                     	
+                     		result = "";
+                     		//查看新手标详情
+                     		if(bidType == "1"){
+                     			var detail = "";
+                                if($.inArray("financial:bid:query", pers) >= 0){
+                                	var btn = $("<button class='layui-btn layui-btn-xs'><i class='layui-icon'>&#xe705;</i>查看详情</button>");
+                                	btn.attr("onclick", "newBidDetail('" +id+"')");
+                                	detail = btn.prop("outerHTML");
+                                }
+                     			result += detail;
+                     		}else if(bidType != "1" && status != "8"){
+                     			//查看产权质押标详情
+                     			if(bidType == "2"){
+                     				var href = "bidDetail.html?id="+id+"&sign=detail&type=CQ&bussessinessId="+bussessinessId;
+                         			var detail = buttonDetail(href, "financial:bid:query", pers);
+                         			result += detail;
+                     			}
+                     			//查看应收款融资标详情
+                     			if(bidType == "3"){
+                     				var href = "bidDetail.html?id=" + id+"&sign=detail&type=YS&bussessinessId="+bussessinessId;
+                         			var detail = buttonDetail(href, "financial:bid:query", pers);
+                         			result += detail;
+                     			}
+                     		}
+                     		
+                     		if(status == "8" && bidType != "1"){
+                     			//审核产权质押标
+                     			if(bidType == "2"){
+                     				var href = "bidDetail.html?id=" + id+"&sign=check&type=CQ&bussessinessId="+bussessinessId;
+                                    if($.inArray("financial:bid:check", pers) >= 0){
+                                    	var btn = $("<button class='layui-btn layui-btn-xs' onclick='window.location=\"" + href +"\"'><i class='layui-icon'>&#xe6b2;</i>审核</button>");
+                                    	result += btn.prop("outerHTML");
+                                    }
+                     			}
+                     			//审核应收款融资标
+                     			if(bidType == "3"){
+                     				var href = "bidDetail.html?id=" + id+"&sign=check&type=YS&bussessinessId="+bussessinessId;
+                         			//审核
+                                    if($.inArray("financial:bid:check", pers) >= 0){
+                                    	var btn = $("<button class='layui-btn layui-btn-xs' onclick='window.location=\"" + href +"\"'><i class='layui-icon'>&#xe6b2;</i>审核</button>");
+                                    	result += btn.prop("outerHTML");
+                                    }
+                     			}
+                     		}
+                     		
+                     		if(bidType != 1){
+                     			//设置首页显示
+                     			if(status == 1){
+                     				var isIndex = row['isIndex'];
+                         			if(isIndex == 1){
+                             			var btn = $("<button class='layui-btn layui-btn-xs' onclick='indexShow(\"" + id +"\",2)'><i class='layui-icon'>&#xe6b2;</i>设置首页不显示</button>");
+                                    	result += btn.prop("outerHTML");
+                             		}else{
+                             			var btn = $("<button class='layui-btn layui-btn-xs' onclick='indexShow(\"" + id +"\",1)'><i class='layui-icon'>&#xe6b2;</i>设置首页显示</button>");
+                                    	result += btn.prop("outerHTML");
+                             		}
+                     			}
+                     			
+                     			//还款
+                     			var endTime = row['endTime'];
+                     			var isRepaymentToUser = row['isRepaymentToUser'];
+                     			if(endTime != null){
+                     				var date = new Date(endTime);
+                          			var nowDate = dateFtt("yyyy-MM-dd",new Date);
+                          			var nowTime = new Date(nowDate);
+                          			if(date <= nowTime){
+                          				if(isRepaymentToUser == 2){
+                          					var btn = $("<button class='layui-btn layui-btn-xs' onclick='refund(\"" + id +"\")'><i class='layui-icon'>&#xe65e;</i>还款给债权人</button>");
+                                        	result += btn.prop("outerHTML");
+                          				}
+                          			}
+                     			}
+                     		}
+                     		
+                     		//查看债权列表
+                 			if(status == "2"){
+                 				var btn = $("<button class='layui-btn layui-btn-xs' onclick='showCreditors(\"" + id +"\")'><i class='layui-icon'>&#xe63c;</i>查看债权列表</button>");
+                            	result += btn.prop("outerHTML");
+                     		}
+                            return result;
+                     	}
+                     },
+                 ]
+    		});
+    }
+
+    init();
+});
+
+function addBid(){
+	//获取当前新手标是否已结束
+	//返回0表示不可以，返回1表示可以
+	$.ajax({
+		type : 'get',
+		url : domainName + '/api-P2P/bids/queryNewBid',
+		success : function(data) {
+			if(data!=null){
+				if(data == "1"){
+					//判断新手标参数设置是否存在
+					//返回0表示不存在，返回1表示存在
+					$.ajax({
+						type : 'get',
+						url : domainName + '/api-P2P/pfBidTypeSettings/queryNewBidTypeSetting',
+						success : function(data) {
+							if(data == "1"){
+								layer.open({
+									title:"添加新手标",
+									type: 2,
+									area: ['1000px', '80%'],
+									maxmin: true,
+									shadeClose: false,
+									content: ['newBid.html?sign=add'] 
+								})
+							}else if(data == "0"){
+								layer.open({
+							    	title: '提示',
+									content: '当前新手标设置不存在，请先进行新手标设置!'
+								});  
+							}
+						}
+					});
+				}else if(data == "0"){
+					layer.open({
+				    	title: '提示',
+						content: '当前尚有新手标在投标中，暂不能添加新手标!'
+					});    
+				}
+
+			}
+		}
+	});
+}
+
+function newBidDetail(id){
+	layer.open({
+		title:"查看详情",
+		type: 2,
+		area: ['1000px', '80%'],
+		maxmin: true,
+		shadeClose: false,
+		content: ['newBidDetail.html?id=' + id+'&sign=detail'] 
+	})
+}
+
+function refund(id){
+	layer.confirm('确定还款？', {
+        btn : [ '确定', '取消' ]
+    }, function() {
+        $.ajax({
+            type : 'get',
+            url : domainName + "/api-P2P/bids/refund/"+id,
+            success : function(data) {
+                example.ajax.reload();
+                layer.msg("成功给"+data+"个投资者还款成功");
+            }
+        });
+        layer.close(1);
+    });
+}
+
+function indexShow(id,isIndex){
+	layer.confirm('确定要设置？', {
+		btn : [ '确定', '取消' ]
+	}, function() {
+		var obj = new Object();
+		obj.id = id;
+		obj.isIndex = isIndex;
+		
+		$.ajax({
+            type : 'post',
+            contentType: "application/json; charset=utf-8",  
+            url : domainName + '/api-P2P/bids/indexShow',
+            data : JSON.stringify(obj),
+            success : function(data) {
+                example.ajax.reload();
+                layer.msg("设置成功");
+            }
+        });
+		layer.close(1);
+	});
+}
+
+function showCreditors(id){
+	layer.open({
+		title:"查看债权人列表",
+		type: 2,
+		area: ['1000px', '80%'],
+		maxmin: true,
+		shadeClose: false,
+		content: ['showCreditors.html?id=' + id] 
+	})
+}
+
+$("#searchBt").click(function(){
+	example.ajax.reload();
+}); 
+
+$("#resetBt").click(function(){
+	$('#repaymentName').val("");
+	$('#bidType').val("");
+	$("#status").val("");
+	$("#isIndex").val("");
+	example.ajax.reload();
+});
+</script>
+</html>

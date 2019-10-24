@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>layui</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="../../layui/css/layui.css"  media="all">
+  <link rel="stylesheet" href="../../css/newstyle.css">
+  <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+  
+<style type="text/css">
+.layui-field-title {
+    margin: 10px 0 20px;
+    border-width: 0px 0 0;
+}
+.layui-layer-btn .layui-layer-btn0{
+	background-color: #1aa094 !important;
+}
+
+</style>
+</head>
+<body id="app">
+    <fieldset class="layui-elem-field" style="margin-left: 50px;margin-top: 15px;margin-right: 50px;border-width: 0px;">  
+    	   <form class="layui-form" action="">
+			  	<fieldset class="layui-elem-field">
+				  <legend>筛选查询</legend>
+				    <div class="layui-form-item">
+					    <div class="layui-inline">
+					      <label class="layui-form-label">订单ID：</label>
+					      <div class="layui-input-inline">
+					        <input class="layui-input" name="orderId" id="orderId" autocomplete="off">
+					      </div>
+					    </div>
+					    <div class="layui-inline">
+					      <label class="layui-form-label">投诉对象:</label>
+					      <div class="layui-input-inline">
+					        <select name="operObject" id="operObject" lay-search="">
+					          <option value="">请选择订单状态</option>
+					          <option value="1">商品</option>
+					          <option value="2">快送员</option>
+					        </select>
+					      </div>
+					    </div>
+					    <div class="layui-inline">
+					      <label class="layui-form-label">状态:</label>
+					      <div class="layui-input-inline">
+					        <select name="status" id="status" lay-search="">
+					          <option value="">全部</option>
+					          <option value="1">待处理</option>
+					          <option value="2">处理中</option>
+					          <option value="3">已处理</option>
+					        </select>
+					      </div>
+					    </div>
+					    <div id="idDiv" class="layui-inline">
+					      <label class="layui-form-label">手机号码:</label>
+					      <div class="layui-input-inline">
+					        <input class="layui-input" name="phoneNo" id="phoneNo" autocomplete="off">
+					      </div>
+					      <button type="button" class="layui-btn" data-type="reload">搜索</button>
+					    </div>
+					  </div>
+					  
+					  
+				</fieldset>
+			</form>
+	  	<table class="layui-hide" id="test" lay-filter="test"></table>
+  	</fieldset>
+
+	<script type="text/html" id="barDemo">
+		<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="detail">详情</a>
+	</script>
+	
+	<script type="text/html" id="barDemo1">
+		
+  {{#  if(d.status === '1'){ }}
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="dispose">处理</a>
+  {{#  } else if(d.status === '2'){ }}
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="disposewanc">处理完成</a>
+  {{#  } else { }}
+    <span style="color: #F581B1;">完成</span>
+  {{#  } }}
+	</script>
+	
+	<script type="text/html" id="barDemo2">
+		<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="clog">操作日志</a>
+	</script>
+
+	<div id="mask" style="display: none;text-align: center">
+		<div style="margin:10px 10px">备注</div>
+		<div style="margin:10px 10px">
+			<textarea name="desc" id="remark" placeholder="请填写备注（100个字符以内）" class="layui-textarea"></textarea>
+		</div>
+	</div>
+
+<script src="../../layui/layui.js" charset="utf-8"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script>
+
+var app = new Vue({
+	el : '#app',
+	data : {
+		
+	},
+	created: function () {
+		
+	}
+});
+
+layui.use(['form', 'layedit', 'laydate'], function(){
+	  var form = layui.form
+	  ,layer = layui.layer
+	  ,layedit = layui.layedit
+	  ,laydate = layui.laydate;
+	  var table = layui.table;
+	
+	  
+	  
+});
+
+layui.use('table', function(){
+	  var table = layui.table;
+	  
+	  table.render({
+	    elem: '#test'
+	    ,url:pageUrl+eatPackageName+'/backComplaints/getBackComplaintsAll'
+	    ,title: '用户数据表'
+    	,width: 1615
+	    ,cols: [[
+	    	{type:'numbers'}
+	      ,{field:'order_id', width:100, title: '订单ID', sort: true}
+	      ,{field:'full_name', width:150, title: '用户昵称'}
+	      ,{field:'phone_no', width:150, title: '手机号码'}
+	      ,{field:'oper_objectName', width:160, title: '投诉对象'}
+	      ,{field:'oper_typeName', width:160, title: '投诉类型'}
+	      ,{field:'take_time', width:100, title: '投诉补充',  toolbar: '#barDemo'}
+	      ,{field:'statusName', width:100, title: '状态'}
+	      ,{field:'update_by', width:100, title: '处理人'}
+	      ,{field:'update_time', width:200, title: '最后一次处理时间'}
+	      ,{field:'results', width:150, title: '备注'}
+	      ,{field:'payment_price', width:100, title: '操作',  toolbar: '#barDemo1'}
+	      ,{fixed: 'right', title:'日志',  toolbar: '#barDemo2'}
+	    ]]
+	    ,id: 'affairReload'
+	    ,page: true
+	  });
+	  
+	//监听行工具事件
+	  table.on('tool(test)', function(obj){
+	    var data = obj.data;
+	      if(obj.event === 'detail'){
+	    	//window.location.href=pageUrl+backendPackageName+"/pages/complaints/selectComplaintsDetails.html?id="+data.id;
+	    	window.location="selectComplaintsDetails.html?id="+data.id;
+	      }
+	      if(obj.event === 'clog'){
+	    	//window.location.href=pageUrl+backendPackageName+"/pages/complaints/selectComplaintsLog.html?id="+data.id;
+	    	window.location="selectComplaintsLog.html?id="+data.id;
+	      }
+	      if(obj.event === 'dispose'){
+	    	  layer.confirm('确认获取处理吗？', function(index){
+	    		  $.ajax({
+	    		    	type:'post',
+	    		    	url: pageUrl+eatPackageName+'/backComplaints/getDisposeById?id='+data.id,
+	    		    	data:'',
+	    		    	contentType:"application/json",
+	    		    	success:function(obj){
+	    		    		if(obj.status=='error'){
+	    		    			layer.msg(obj.info); 
+	    		    		}else{
+	    		    			layer.msg(obj.info);
+	    		    			$('#idDiv .layui-btn').click();
+	    		    		}
+	    		    	}
+	    		    });
+	    	  });
+	    }
+	      if(obj.event === 'disposewanc'){
+					layer.open({
+				type: 1,
+				title:"备注",
+				area: ['400px', '300px'],
+				content: $("#mask")
+				,btn: ['确定', '取消']
+				,yes: function(index, layero){
+					//按钮【按钮一】的回调
+					if($("#remark").val() == ""){
+				layer.open({
+					title: '提示'
+					,content: '拒绝退款理由不能为空',
+					yes:function(){
+						// layer.close(tipIndex);
+						layer.closeAll();
+					}
+				}); 
+		}else{
+					$.ajax({
+				type : "POST",
+				url : pageUrl + eatPackageName + `/backComplaints/getDisposeFinishById?id=${data.id}&userId=${sessionStorage.ID}&remark=${$("#remark").val()}`,
+				data: {
+				},
+				beforeSend : function() {
+					tipIndex = layer.load(0, {
+						shade : false
+					});
+				},
+				complete : function() {
+					layer.close(tipIndex);
+				},
+				error : function(request) {
+					layer.alert("系统出错");
+				},
+				success : function(result) {
+					console.log(result);
+					if (result.status == "success") {
+						
+						layer.open({
+					title: '提示'
+					,content: result.info,
+					yes:function(){
+						location.href = "selectComplaints.html";
+					}
+				}); 
+					} else {
+						layer.alert(result.info);
+					}
+				}
+			});
+		}
+				}
+
+			});
+
+
+
+
+
+	    	  // layer.confirm('确认处理完成吗？', function(index){
+	    		//   $.ajax({
+	    		//     	type:'post',
+	    		//     	url: pageUrl+eatPackageName+'/backComplaints/getDisposeFinishById?id='+data.id,
+	    		//     	data:'',
+	    		//     	contentType:"application/json",
+	    		//     	success:function(obj){
+	    		//     		if(obj.status=='error'){
+	    		//     			layer.msg(obj.info); 
+	    		//     		}else{
+	    		//     			layer.msg(obj.info);
+	    		//     			$('#idDiv .layui-btn').click();
+	    		//     		}
+	    		//     	}
+	    		//     });
+					// });
+					
+					
+	    }
+	  });
+	
+	  
+	  var $ = layui.$, active = {
+	    reload: function(){
+	      var orderId = $('#orderId');
+	      var operObject = $('#operObject');
+	      var status = $('#status');
+	      var phoneNo = $('#phoneNo');
+	      
+	      //执行重载
+	      table.reload('affairReload', {
+      	    url:pageUrl+eatPackageName+'/backComplaints/getBackComplaintsAll'
+	        ,page: {
+	          curr: 1 //重新从第 1 页开始
+	        }
+	        ,where: {
+	        	orderId : orderId.val(),
+	        	operObject : operObject.val(),
+	        	status : status.val(),
+	        	phoneNo : phoneNo.val()
+	        }
+	      });
+	    }
+	  };
+	  
+	  $('#idDiv .layui-btn').on('click', function(){
+		    var type = $(this).data('type');
+		    active[type] ? active[type].call(this) : '';
+		  });
+	  
+});
+
+function toDetails(){
+   // window.location.href=pageUrl+backendPackageName+"/pages/takefood/insertFoodStoreInfo.html";
+    window.location="insertFoodStoreInfo.html";
+}
+</script>
+
+</body>
+</html>

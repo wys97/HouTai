@@ -1,0 +1,198 @@
+<!-- 后台用户管理，司机列表-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<!-- 引入样式 -->
+
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/axios.min.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+
+<!-- 引入组件库 -->
+<style>
+    [v-cloak] {
+        opacity: 0;
+
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    .form {
+        margin: 20px 0 0 20px
+    }
+
+    .pagination {
+        margin-left: 10px
+    }
+
+</style>
+
+<body>
+    <div id="app" v-cloak>
+        <div>
+            <el-form :inline="true" :model="form" class="form">
+                <el-form-item label="操作人昵称">
+                    <el-input v-model="form.userName" clearable maxlength="11" placeholder="操作人昵称"></el-input>
+                </el-form-item>
+                <el-form-item label="操作模块">
+                    <el-select v-model="form.tableId" clearable placeholder="请选择">
+                        <el-option v-for="item in dicDataList" :key="item.id" :label="item.text" :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="操作类型">
+                    <el-select v-model="form.operType" clearable placeholder="操作类型">
+                        <el-option label="添加" value="1"></el-option>
+                        <el-option label="修改" value="2"></el-option>
+                        <el-option label="删除" value="3"></el-option>
+                        <el-option label="导出" value="4"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="开始时间">
+                    <el-date-picker clearable value-format="yyyy-MM-dd" v-model="form.startTime" type="date"
+                        placeholder="选择开始日期"></el-date-picker>
+                    <el-date-picker clearable value-format="yyyy-MM-dd" v-model="form.endTime" type="date"
+                        placeholder="选择结束日期"></el-date-picker>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="search()">查询</el-button>
+                </el-form-item>
+            </el-form>
+            <el-table :data="tableData" border style="width: 95%;margin: 0 20px 20px 20px">
+                <el-table-column prop="id" align="center" label="日志ID"></el-table-column>
+                <el-table-column prop="petName" align="center" label="操作类型">
+                    <template slot-scope="scope">
+                        <p v-if="scope.row.operType == 1">添加</p>
+                        <p v-if="scope.row.operType == 2">修改</p>
+                        <p v-if="scope.row.operType == 3">删除</p>
+                        <p v-if="scope.row.operType == 4">导出</p>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="tableName" align="center" label="操作表名"></el-table-column>
+                <el-table-column prop="primaryId" align="center" label="操作表主键ID"></el-table-column>
+                <el-table-column prop="tableComment" align="center" label="操作模块"></el-table-column>
+                <el-table-column prop="userName" align="center" label="操作人"></el-table-column>
+                <el-table-column prop="createTime" align="center" label="操作时间"></el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="text" @click="detail(scope.row)">详情</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination class="pagination" background @current-change="changeTotal" :current-page.sync="form.pageNum" layout="prev, pager, next" :total="total"></el-pagination>
+            <el-dialog title="详情" :visible.sync="detailFlag" width="50%">
+                <el-table :data="detailData" border>
+                    <el-table-column prop="columnName" align="center" label="列名"></el-table-column>
+                    <el-table-column prop="columnComment" align="center" label="列说明"></el-table-column>
+                    <el-table-column prop="oldValue" align="center" label="旧数据"></el-table-column>
+                    <el-table-column prop="newValue" align="center" label="新数据"></el-table-column>
+                </el-table>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="detailFlag = false">取 消</el-button>
+                </span>
+            </el-dialog>
+        </div>
+    </div>
+</body>
+<script>
+    new Vue({
+        el: "#app",
+        data() {
+            return {
+                detailFlag: false,
+                form: {
+                    userName: '', //操作人昵称
+                    operType: '', //操作类型
+                    startTime: "", //操作时间-开始时间
+                    endTime: "", //操作时间-结束时间
+                    pageNum: 1,
+                    pageSize: 10,
+                    tableId: "", //	表id
+                    orderBy: "" //为空
+                },
+                total: 0,
+                tableData: [], //司机列表数据
+                detailData: [], //详情
+                dicDataList: [] //下拉操作表
+            }
+        },
+        methods: {
+            //获取表格数据
+            getTableData() {
+                if(this.form.startTime == null){
+                    this.form.startTime = "";
+                }else if(this.form.startTime !== ""){
+                    this.form.startTime = this.form.startTime + " 00:00:00"
+                }
+
+                if(this.form.endTime == null){
+                    this.form.endTime = "";
+                }else if(this.form.endTime !== ""){
+                    this.form.endTime = this.form.endTime + " 23:59:59"
+                }
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/sysLog/queryList",
+                    params: this.form
+                })
+                .then((res) => {
+                    this.total = res.data.data.total;
+                    this.tableData = res.data.data.rows;
+                })
+            },
+
+            //获取下拉操作表
+            getTableDicData() {
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/sysLog/queryTableDicData",
+                })
+                .then((res) => {
+                    this.dicDataList = res.data.data;
+                })
+            },
+
+            //详情
+            detail(e) {
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + `/sysLog/queryDetail?id=${e.id}`,
+                })
+                .then((res) => {
+                    this.detailData = res.data.data;
+                    this.detailFlag = true;
+                })
+            },
+
+            changeTotal(e) {
+                this.form.pageNum = e;
+                this.getTableData();
+            },
+            
+            search(){
+                this.form.pageNum = 1;
+                this.getTableData()
+            }
+        },
+        created() {
+            this.getTableData();
+            this.getTableDicData();
+        },
+    })
+</script>
+
+</html>

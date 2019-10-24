@@ -1,0 +1,519 @@
+<!-- 菜单管理 -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+</head>
+<!-- 引入样式 -->
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/axios.min.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+<!-- <link rel="stylesheet" href="../../css/newstyle.css"> -->
+<!-- <link rel="stylesheet" href="../../css/elementUItheme/button.css">
+	<link rel="stylesheet" href="../../css/elementUItheme/pagination.css"> -->
+<!-- <link rel="stylesheet" href="../../css/elementUItheme/switch.css"> -->
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/common.js"></script>
+<style>
+	[v-cloak] {
+		opacity: 0;
+	}
+	input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+</style>
+
+<body>
+	<div id="app" v-cloak>
+		<h3>优惠券编辑</h3>
+		<div>
+			<el-form :model="form" :rules="rules" ref="form" label-width="150px" style="display: inline-block">
+				<el-form-item label="优惠券名称" prop="name">
+					<el-input v-model="form.name" maxlength="10"></el-input>
+				</el-form-item>
+				<el-form-item label="优惠券金额" prop="faceValue">
+					<el-input v-model="form.faceValue" maxlength="5">
+						<template slot="append">元</template>
+					</el-input>
+				</el-form-item>
+				<el-form-item label="适用城市" prop="city">
+					<el-radio-group v-model="cityRules" @change="changeCityFlag">
+						<el-radio :label="0">不限</el-radio>
+						<el-radio :label="1">适用城市</el-radio>
+						<el-select v-if='cityRules == 1' ref="city" v-model="form.cityCode" multiple placeholder="请选择适用城市" @change="changeCity">
+							<el-option v-for="item in cityList" :key="item.codeC" :label="item.name" :value="item.codeC"></el-option>
+						</el-select>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="适用门店" prop="store">
+					<el-radio-group v-model="storeRules" @change="changeStoreFlag">
+						<el-radio :label="0">不限</el-radio>
+						<el-radio :label="1">适用门店</el-radio>
+						<el-select v-if='storeRules == 1' ref="store" v-model="form.storeId" multiple placeholder="请选择适用门店" >
+							<el-option v-for="item in storeList" :key="item.id" :label="item.storeName" :value="item.id"></el-option>
+						</el-select>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="适用品类" prop="applyType">
+					<el-radio-group v-model="form.applyType">
+						<el-radio :label="1">通用所有品类</el-radio>
+						<el-radio :label="2">仅限菜品</el-radio>
+						<el-radio :label="3">仅限商品</el-radio>
+					  </el-radio-group>
+				</el-form-item>
+				<el-form-item label="适用对象" prop="applyUser">
+					<el-radio-group v-model="form.applyUser">
+						<el-radio :label="0">所有司机</el-radio>
+						<el-radio :label="1">出租车司机</el-radio>
+						<el-radio :label="2">网约车司机</el-radio>
+						<el-radio :label="3">普通司机</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				
+				<el-form-item label="使用门槛" prop="useType">
+					<el-radio-group v-model="form.useType" @change="useTypeChange">
+						<el-radio :label="1">无使用门槛</el-radio>
+						<el-radio :label="2">消费满</el-radio>
+						<el-input v-model="form.consumptionMoney" maxlength="5" size="mini" style="width:200px" v-if="form.useType !== 1"><template slot="append">元</template></el-input>
+					</el-radio-group>
+				</el-form-item>
+
+				<el-form-item label="每人限领张数" prop="everyoneCollarNumber">
+					<el-radio-group v-model="everyoneCollarNumber" @change="everyoneCollarNumberChange">
+						<el-radio :label="0">不限</el-radio>
+						<el-radio :label="1">仅</el-radio>
+						<el-input v-model.number="form.everyoneCollarNumber" maxlength="5" size="mini" style="width:200px" v-if="everyoneCollarNumber !== 0"><template slot="append">张</template></el-input>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="每日限领张数" prop="eachDayNumberChange">
+					<el-radio-group v-model="eachDayNumber" @change="eachDayNumberChange">
+						<el-radio :label="0">不限</el-radio>
+						<el-radio :label="1">仅</el-radio>
+						<el-input v-model.number="form.eachDayNumber" size="mini" style="width:200px" maxlength="5" v-if="eachDayNumber !== 0"><template slot="append">张</template></el-input>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="每单限使用张数" prop="eachSingleUseNumber">
+					<el-radio-group v-model="eachSingleUseNumber" @change="eachSingleUseNumberChange">
+						<el-radio :label="0">不限</el-radio>
+						<el-radio :label="1">仅</el-radio>
+						<el-input v-model.number="form.eachSingleUseNumber" size="mini" style="width:200px" maxlength="5" v-if="eachSingleUseNumber !== 0"><template slot="append">张</template></el-input>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item label="有效期" prop="endTime">
+						<el-input v-model="form.endTime" style="width:200px" maxlength="5"><template slot="append">天</template></el-input>
+				</el-form-item>
+				<el-form-item>
+					<el-button type="primary" @click="onSubmit('form')">确定修改</el-button>
+					<el-button @click="back">返回</el-button>
+				</el-form-item>
+			</el-form>
+		</div>
+	</div>
+</body>
+<script>
+	new Vue({
+		el: '#app',
+		data(){
+			let faceValue = (rule, value, callback) => {
+                if(!value) {
+                    callback(new Error('请填写金额'))
+                }else if(!/^[0-9]*\.?([0-9]{0,2})$/g.test(value) || value == 0) {
+                    callback(new Error('请输入正确的金额'))
+                } else {
+                    callback();
+                }
+            }
+			let city = (rule, value, callback) => {
+				if(this.cityRules == 1 && this.form.cityCode == ""){
+					callback(new Error('选择适用城市'))
+				}else if(this.form.cityCode != ""){
+					callback();
+				}else if(this.form.cityName == "不限城市"){
+					callback();
+				}
+			}
+			
+			let store = (rule, value, callback) => {
+				// if(this.cityRules == 1 && this.form.storeId == ""){
+				// 	callback(new Error('选择适用门店'))
+				// }else{
+				// 	callback()
+				// }
+				if(this.cityRules == 1 && this.storeRules == 0){
+					callback()
+				} else if(this.cityRules == 1 && this.form.storeId == ""){
+					callback(new Error('选择适用门店'))
+				}else if(this.cityRules == 1 && (this.storeRules == 1 && this.form.storeId != "")){
+					callback()
+				}else{
+					callback()
+				}
+			}
+
+			//使用门槛
+			let useType = (rule, value, callback) => {
+				console.log(this.form.useType)
+				if(this.form.useType == 2 && this.form.consumptionMoney == ""){
+					callback(new Error('请输入使用门槛金额'))
+				}else if(this.form.useType == 2 && /^[1-9]\d*$/.test(this.form.consumptionMoney) == false){
+					callback(new Error('请输入一个整数'))
+				} else if(this.form.useType == 1 ){
+					callback();
+				}else if(this.form.useType == 2 && this.form.consumptionMoney != ""){
+					callback();
+				}
+            }
+
+			//每人限领张数校验
+			let everyoneCollarNumberRule  = (rule, value, callback) => {
+				if(this.everyoneCollarNumber == 1 && this.form.everyoneCollarNumber == ""){
+					callback(new Error('请输入每人限领张数'))
+				}else if(this.everyoneCollarNumber == 1 && /^[1-9]\d*$/.test(this.form.everyoneCollarNumber) == false){			//this.form.everyoneCollarNumber
+					callback(new Error('请输入大于0的整数'))
+				}else{
+					callback();
+				}
+            }
+			//每日限领张数校验
+			let eachDayNumberRule  = (rule, value, callback) => {
+				if(this.eachDayNumber == 1 && this.form.eachDayNumber == ""){
+					callback(new Error('请输入每日限领张数校验'))
+				}else if(this.eachDayNumber == 1 && /^[1-9]\d*$/.test(this.form.eachDayNumber) == false){			//this.form.everyoneCollarNumber
+					callback(new Error('请输入大于0的整数'))
+				}else{
+					callback();
+				}
+            }
+			//每单限使用张数
+			let eachSingleUseNumberRule  = (rule, value, callback) => {
+				if(this.eachSingleUseNumber == 1 && this.form.eachSingleUseNumber == ""){
+					callback(new Error('请输入每单限使用张数'))
+				}else if(this.eachSingleUseNumber == 1 && /^[1-9]\d*$/.test(this.form.eachSingleUseNumber) == false){			//this.form.everyoneCollarNumber
+					callback(new Error('请输入大于0的整数'))
+				}else{
+					callback();
+				}
+            }
+
+			//优惠券有效期
+			let endTime  = (rule, value, callback) => {
+
+				if(!value) {
+                    callback(new Error('请填写优惠券有效期'))
+                } else if(/^ +$/gi.test(value)) {
+                    callback(new Error('优惠券有效期不能为纯空格'))
+                } else if(!/^[1-9]\d*$/gi.test(value)) {
+                    callback(new Error('请输入一个整数'))
+                } else {
+                    callback()
+                }
+            }
+			return{
+				cityRules:0,						//适用城市
+				storeRules:0,						//适用门店
+				everyoneCollarNumber:0,				//每人限领张数
+				eachDayNumber:0,						//每日限领张数
+				eachSingleUseNumber:0,					//每单限使用张数
+				form: {
+					name: '',				//优惠券名称
+					faceValue: "",			//优惠券金额
+					applyType:1,			//适用品类
+					applyUser:0,			//适用司机对象
+					useType:1,				//使用门槛
+					consumptionMoney:"0",	//当useType等于2时消费满减  输入框
+					everyoneCollarNumber:"0",		//每人限领张数
+					eachSingleUseNumber:"0",	//每单限使用张数
+					eachDayNumber:"0",		//每日 限领张数
+					endTime:"",				//有效期(领取后到期天数)
+					cityCode:[],			//限使用城市id		多个以英文逗号隔开
+					storeId:0,				//限使用门店id		多个以英文逗号隔开
+					cityName:"不限城市",			//限使用城市名称	多个以英文逗号隔开
+					storeName:"不限门店",			//限使用门店名称	多个以英文逗号隔开
+					moneyType:1,			//金额发放类型
+				},
+				cityList: [],
+				storeList:[],
+				rules:{
+					name: [{required: true,message: '请输入优惠券名称',trigger: 'blur'}],
+					faceValue: [{validator:faceValue,trigger: 'blur',required: true}],
+					applyType:[{required: true,message: '请选择活适用品类',trigger: 'blur'}],
+					applyUser:[{required: true,message: '请选择适用司机对象',trigger: 'blur'}],
+					useType:[{validator:useType,required: true}],
+					everyoneCollarNumber:[{validator:everyoneCollarNumberRule,required: true}],
+					eachDayNumberChange:[{validator:eachDayNumberRule,required: true,trigger: ['change','blur']}],
+					eachSingleUseNumber:[{validator:eachSingleUseNumberRule,required: true,trigger: ['change','blur']}],
+					endTime:[{validator:endTime,required: true}],
+					city: [{validator:city,required: true, trigger: ['blur', 'change'],}],
+					store: [{validator:store,required: true, trigger: ['blur', 'change'],}],
+				},
+				cityCodes:"",
+			}
+		},
+		methods: {
+			onSubmit(formName) {
+				console.log("this.form",this.form);
+				let data = Object.assign({},this.form);
+				console.log("data",data);
+				data.operateUserId = sessionStorage.ID;
+				let cityName = [];		//城市名字
+				let storeName = [];		//门店名字
+
+				if(this.cityRules != 0){
+					this.$refs.city.selected.map((val) => {			//添加城市名字和门店名字
+						cityName.push(val.currentLabel);				//城市名字添加
+					})
+					data.cityName = cityName.join();
+				
+				}
+				if(this.storeRules != 0){
+					this.$refs.store.selected.map((val) => {			
+						storeName.push(val.currentLabel);				
+					})
+						data.storeName = storeName.join();
+				}
+
+				console.log(data);
+				data.cityCode instanceof Array ? data.cityCode = data.cityCode.join() : "";
+				if(data.storeId instanceof Array && data.storeId.length  == 0){
+					data.storeId = 0
+				}else if(data.storeId instanceof Array && data.storeId.length  > 0){
+					data.storeId = data.storeId.join()
+				}
+				// data.storeId instanceof Array ? data.storeId = data.storeId.join() : "";
+				this.$refs[formName].validate((valid) => {
+					if (valid) {
+						axios({
+							method: 'POST',
+							url: pageUrl + couponPackageName + "/coupon/updateById",
+							params:data
+						})
+						.then((res) => {
+							console.log(res);
+							if(res.data.code == "000000"){
+								this.subLoading = false;
+								this.$alert('已成功修改优惠券', "提示", {
+									confirmButtonText: '确定',
+									callback: action => {
+										location.href = "./couponList.html";
+									}
+								});
+							} else {
+								this.$message.error(res.data.message);
+							}
+						})
+					}
+                });
+			},
+
+			back(){
+				location.href = "./couponList.html"
+			},
+
+			//获取城市下拉列表
+			getCity(){
+				axios({
+					method: 'get',
+					url: pageUrl + eatPackageName + "/city/city_list",
+				})
+				.then((res) => {
+					console.log("获取城市下拉列表",res.data.data);
+					this.cityList = res.data.data;
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+			//分页改变时
+			change(e){
+				console.log(e);
+			},
+
+			//城市改变时请求门店
+			changeCity(e){
+				console.log(this.form.storeId);
+				axios({
+					method: 'get',
+					url: pageUrl + eatPackageName + "/storeManager/getCityFoodStoreInfo",
+					params:{cityCodes:this.form.cityCode.join()}
+				})
+				.then((res) => {
+					let data = res.data.data;
+					let arr = [];
+
+					//根据试用城市 筛选出门店  避免选择门店之后删除城市     删除的城市门店数据还在
+					let cc = data.filter(item => { return this.form.cityCode.includes(item.storeCity)});	
+					let dd = cc.filter(item => { return this.form.storeId.includes(item.id)});
+					dd.forEach(val => {
+						arr.push(val.id)
+					});
+					console.log("cc",cc);
+					console.log("dd",dd);
+					console.log("data",data);
+					this.storeList = cc;
+					this.form.storeId = arr;
+
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+
+			//每人限领张数   单选框改变时
+			everyoneCollarNumberChange(e){
+				console.log("每人限领张数   单选框改变时",e);
+				if(e == 1){
+					this.form.everyoneCollarNumber = "";
+				}else if(e == 0){
+					this.form.everyoneCollarNumber = 0;
+				}
+			},
+
+			//每日限领张数   单选框改变时
+			eachDayNumberChange(e){
+				if(e == 1){
+					this.form.eachDayNumber = "";
+				}else if(e == 0){
+					this.form.eachDayNumber = "0";
+				}
+			},
+
+			//每单限用张数   单选框改变时
+			eachSingleUseNumberChange(e){
+				if(e == 1){
+					this.form.eachSingleUseNumber = "";
+				}else if(e == 0){
+					this.form.eachSingleUseNumber = "0";
+				}  
+			},
+
+			//使用门槛
+			useTypeChange(e){
+				if(e == 1){
+					this.form.consumptionMoney = "0";
+				}else if(e == 2){
+					this.form.consumptionMoney = "";
+				}
+			},
+
+			//适用城市改变时
+			changeCityFlag(e){
+				if(e == 0){
+					this.form.cityCode = "000000";
+					this.form.cityName = "不限城市"
+					this.form.storeId = "0";
+					this.storeList = [];
+				}else if(e == 1){
+					this.form.cityCode = []
+				}
+			},
+			//适用门店改变时
+			changeStoreFlag(e){
+				if(e == 0){	
+					this.form.storeId = "0";
+					this.form.storeName = "不限门店"
+				}else if(e == 1){
+					this.form.storeId = []
+				}
+				
+                if(this.cityRules == 0 && e == 1){
+                    
+                    this.storeList = [];
+                }
+			},
+
+
+			//获取优惠券详情信息
+			getData(){
+				axios({
+					method: 'get',
+					url: pageUrl + couponPackageName + "/coupon/selectById",
+					params:{id:GetRequest().id}
+				})
+				.then((res) => {
+					// this.cityCodes = res.data.data.cityCode;
+					//每人限领张数处理
+					let data = res.data.data;
+					console.log(res);
+
+					if(data.everyoneCollarNumber != 0){
+						this.everyoneCollarNumber = 1;
+					}
+					//每日限领张数
+					if(data.eachDayNumber != 0){
+						this.eachDayNumber = 1;
+					}
+					//每单限使用张数
+					if(data.eachSingleUseNumber != 0){
+						this.eachSingleUseNumber = 1;
+					}
+					
+					//当适用城市的code为不限时切换
+					if(data.cityCode == "000000"){
+						this.cityRules = 0;
+					}else if(data.cityCode != "000000"){
+						this.cityRules = 1;
+					}
+
+					if(data.storeId == "0"){
+						this.storeRules = 0
+					}else if(data.storeId != "0"){
+						this.storeRules = 1
+					}
+					
+					data.cityCode = data.cityCode.split(",");
+					data.storeId = data.storeId.split(",");
+					for (let i = 0; i < data.storeId.length; i++) {
+						data.storeId[i] = parseInt(data.storeId[i])
+					}
+					console.log(data);
+					this.form = data;
+					this.getStore();
+				});
+
+			},
+
+			//获取取餐点下拉列表
+			getStore(){
+
+				axios({
+					method: 'get',
+					url: pageUrl + eatPackageName + "/storeManager/getCityFoodStoreInfo",
+					params:{cityCodes:this.form.cityCode.join()}
+				})
+				.then((res) => {
+					console.log("cityCodes:this.form.cityCode.join(",this.form.cityCode);
+					console.log("获取取餐点下拉列表",res.data.data);
+					this.storeList = res.data.data
+
+				})
+
+			},
+
+
+		},
+		created() {
+			
+			this.getCity();
+			this.getData();
+			
+	
+
+		},
+	})
+</script>
+
+</html>

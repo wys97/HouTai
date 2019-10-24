@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="en">
+        <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Document</title>
+
+
+<!-- 引入样式 -->
+</head>
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/axios.min.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<style>
+    
+    *{
+        padding: 0;margin:0;
+    }
+    li{list-style:none;}
+    [v-cloak] {
+        opacity: 0;
+    }
+
+    .detail>div {
+        margin-bottom: 10px
+    }
+
+    .accountDetailBox > li{
+        float: left;
+        margin-right: 60px;
+    }
+
+    .icon{
+        width: 50px;
+        height: 50px;
+    }
+
+    .item{
+        width: 220px;
+        display:inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .item1{
+        width: 130px;
+        display:inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
+    }
+    .item3{
+        width: 260px;
+        display:inline-block;
+        /* overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap; */
+        
+        text-align: left;
+    }
+
+    .flex{
+        display: flex;
+        justify-content:space-between;
+        border-bottom: 1px dashed #bbb6b6;
+        padding:10px 10px;
+        text-align: center;
+    }
+
+    .flex > div{
+        min-width: 130px;
+    }
+
+</style>
+
+<body>
+    <div id="app" v-cloak>
+        <el-form :model="form"  :inline="true" label-width="100px" >
+                <!-- <el-button icon="el-icon-warning-outline" circle></el-button> -->
+            <el-form-item label="处理状态">
+                <el-select v-model="form.state" clearable placeholder="请选择处理状态">
+                    <el-option v-for="item in handleStateList" :key="item.key" :label="item.value" :value="item.key"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="类型">
+                <el-select v-model="form.type" clearable placeholder="请选择申请类型">
+                    <el-option v-for="item in typeList" :key="item.key" :label="item.value" :value="item.key"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="处理人">
+                <el-select v-model="form.operId" clearable placeholder="请选择处理人">
+                    <el-option v-for="item in csUserList" :key="item.id" :label="item.userName" :value="item.id"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="账号">
+                    <el-input v-model="form.phone" maxlength="11" clearble placeholder="请输入11位手机号"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="search">查询</el-button>
+                    <el-button @click="clear">重置</el-button>
+                </el-form-item>
+            <el-form-item label="城市">
+                <el-select v-model="form.city" filterable  clearable placeholder="请选择城市">
+                    <el-option v-for="item in cityList" :key="item.city" :label="item.cName" :value="item.city"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="开始时间">
+                <el-date-picker clearable value-format="yyyy-MM-dd" v-model="form.startTime" type="date" placeholder="选择开始日期"></el-date-picker>
+                <el-date-picker clearable value-format="yyyy-MM-dd" v-model="form.endTime" type="date" placeholder="选择结束日期"></el-date-picker>
+            </el-form-item>
+        </el-form>
+        <el-table style="width: 100%" :data="tableData" border row-key="id">
+            <el-table-column prop="create_time" align="center" label="申请时间"></el-table-column>
+            <el-table-column prop="city" align="center" label="申请城市"></el-table-column>
+            <el-table-column prop="type" align="center" label="类型">
+                <template slot-scope="scope">
+                    <div v-if="scope.row.type == 0">周转</div>
+                    <div v-if="scope.row.type == 1">当副班</div>
+                    <div v-if="scope.row.type == 2">招副班</div>
+                    <div v-if="scope.row.type == 3">金牌租车</div>
+                    <div v-if="scope.row.type == 4">亚滴租车</div>
+                    <div v-if="scope.row.type == 5">曹操出行</div>
+                    <div v-if="scope.row.type == 6">首汽约车</div>
+                    <div v-if="scope.row.type == 7">精准租车</div>
+                </template>
+            </el-table-column>
+            <el-table-column prop="phone" align="center" label="账号"></el-table-column>
+            <el-table-column prop="state" align="center" label="状态">
+                <template slot-scope="scope">
+                    <div v-if="scope.row.state == 0">待处理</div>
+                    <div v-if="scope.row.state == 1">处理中</div>
+                    <div v-if="scope.row.state == 2">处理完成</div>
+                    <div v-if="scope.row.state == 3">已取消</div>
+                    <div v-if="scope.row.state == 4">处理失败</div>
+                    <div v-if="scope.row.state == 5">已关闭</div>
+                </template>
+            </el-table-column>
+            <el-table-column prop="operName" align="center" label="最近处理人"></el-table-column>
+
+            <el-table-column prop="" align="center" label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="detail(scope.row)">详情</el-button>
+                    <!-- <el-button v-if="scope.row.state == 0" type="text" @click="process(scope.row)">处理</el-button> -->
+                    <el-button v-if="scope.row.state == 0 || scope.row.state == 1" type="text" @click="completeProcessing(scope.row)">处理</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination background layout="prev, pager, next" :current-page.sync="form.pageIndex" @current-change="change" :total="total"></el-pagination>
+
+        <!-- 详情弹框 -->
+        <el-dialog :title="dialogTitle" @closed="detailClosed" :visible.sync="userDetailFlag" width="50%">
+            <div class="detail" >
+                <!--周转-->
+                <el-collapse v-model="activeNames">
+                    <el-collapse-item  title="账号信息" name="1">
+                       <ul class="accountDetailBox">
+                           <li>注册账号：{{accountDetail.phone_num || accountDetail.phoneNumber || accountDetail.phone_no}}</li>
+                           <li>注册时间：{{accountDetail.create_time}}</li>
+                           <li>城市：{{accountDetail.city || "无"}}</li>
+                           <li><a :href="href">查看账号</a></li>
+                       </ul>
+                       <div>消费笔数：{{accountDetail.order_num}}</div>
+                       <p>申请历史</p>
+                       <ul class="psInfoListBox" v-for="item in historyOrder">
+                            <li>
+                                <span class="item">{{item.createTime}}</span>
+                                <span class="item" v-if="item.type == 0">周转</span>
+                                <span class="item" v-else-if="item.type == 1">当副班</span>
+                                <span class="item" v-else-if="item.type == 2">招副班</span>
+                                <span class="item" v-else-if="item.type == 3">金牌租车</span>
+                                <span class="item" v-else-if="item.type == 4">亚滴租车</span>
+                                <span class="item" v-else-if="item.type == 5">曹操出行</span>
+                                <span class="item" v-else-if="item.type == 6">首汽约车</span>
+                                <span class="item" v-else-if="item.type == 7">精准租车</span>
+                                <span class="item" v-if="item.state == 0">待处理</span>
+                                <span class="item" v-else-if="item.state == 1">处理中</span>
+                                <span class="item" v-else-if="item.state == 2">处理完成</span>
+                                <span class="item" v-else-if="item.state == 3">已取消</span>
+                                <span class="item" v-else-if="item.state == 4">处理失败</span>
+                                <span class="item" v-else-if="item.state == 5">已关闭</span>
+                            </li>
+                       </ul>
+                    </el-collapse-item>
+
+                    <el-collapse-item title="当前处理进程" name="2">
+                        <ul v-for="item in ealWithInfoList">
+                            <li class="flex">
+                                <div>{{item.createTime}}</div>
+                                <div>{{item.userName || item.user_name}}</div>
+                               
+                                <div v-if="item.secondState == 0">待处理 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 1">处理中 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 2">处理完成 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 3">已取消  <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 4">处理失败 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 5">已关闭 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 11">信息完善 </div>
+                                <div v-else-if="item.secondState == 12">无人接听 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 13">用户忙没时间 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 14">跟进匹配 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 15">初审通过 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 21">成功放款 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 22">成功匹配 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 23">成功租车 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 31">电话无人接听 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 32">服务不满足需求 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 33">不符合要求 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 34">只是了解情况 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div v-else-if="item.secondState == 35">匹配失败 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                <div :title="item.remark">{{item.remark}}</div>
+                            </li>
+                        </ul>
+                    </el-collapse-item>
+                    <el-collapse-item title="当前申请详情" name="3">
+                      <div v-if="detailEvent.type == 0">
+                            <div>姓名：{{userDetail.userName || userDetail.user_name }}</div>
+                                <div>申请时间：{{userDetail.createTime}}</div>
+                                <div>手机号：{{userDetail.phoneNum}}
+                                    <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no !=  userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                </div>
+                                <div v-if="userDetail.cycle == 1">周期：1 ~ 30天</div>
+                                <div v-else-if="userDetail.cycle == 2">周期：30天 ~ 1年</div>
+                                <div v-else-if="userDetail.cycle == 3">周期：1年以上</div>
+                                <div v-if="userDetail.job == 1">司机类型：出租车司机</div>
+                                <div v-else-if="userDetail.job == 2">司机类型：网约车司机</div>
+                                <div v-if="userDetail.money == 1">金额：1000元 ~ 1万元</div>
+                                <div v-else-if="userDetail.money == 2">金额：1万元 ~ 5万元</div>
+                                <div v-else-if="userDetail.money == 3">金额：5万元以上</div>
+                                <div v-if="userDetail.salary == 1">薪资范围：5000元 ~ 8000元</div>
+                                <div v-else-if="userDetail.salary == 2">薪资范围：8000元 ~ 12000元</div>
+                                <div v-else-if="userDetail.salary == 3">薪资范围：12000元 ~ 15000元</div>
+                                <div v-else-if="userDetail.salary == 4">薪资范围：15000元以上</div>
+                                <div v-if="userDetail.repayment == 1">还款类型：按日计息，随借随还</div>
+                                <div v-else-if="userDetail.repayment == 2">还款类型：按月等额，长期超划算</div>
+                                <div v-else-if="userDetail.repayment == 3">还款类型：按月付息，到期还本</div>
+                                <div v-else-if="userDetail.repayment == 4">还款类型：一次性还本付息</div>
+                                <div v-if="userDetail.special == 1">产品偏好：纯信用借款产品</div>
+                                <div v-else-if="userDetail.special == 2">产品偏好：抵押借款产品（汽车、房产）</div>
+                                <div v-if="userDetail.emergent == 1">紧急程度：越快越好，即刻需求</div>
+                                <div v-else-if="userDetail.emergent == 2">紧急程度：近期有可能需要</div>
+                                <div v-else-if="userDetail.emergent == 3">紧急程度：暂时不需要</div>
+                            </div>
+                      <div class="detail" v-if="detailEvent.type == 1">
+                            <!--当副班-->
+                            <div>姓名：{{userDetail.userName || "无"}}</div>
+                            <div>籍贯省份：{{userDetail.nativeName || "无"}}</div>
+                            <div>年龄：{{userDetail.age || "无"}}</div>
+                            <div>手机号：{{userDetail.phoneNumber || "无"}}
+                                <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNumber" style="vertical-align: -2px;" title="与注册账号不同">
+                            </div>
+                            <div>创建时间：{{userDetail.createTime}}</div>
+                            <div v-if="userDetail.type == 1">副班代班时间：白班 </div>
+                            <div v-else-if="userDetail.type == 2">副班代班时间：夜班 </div>
+                            <div v-else-if="userDetail.type == 3">副班代班时间：都可以 </div>
+            
+                            <div>接受哪几个区域交车：{{userDetail.provinceName}}  {{userDetail.cityName}}  (    {{userDetail.areasName}}    )</div>
+                            <div v-if="userDetail.driverTime == 0">个人驾龄：不限</div>
+                            <div v-else-if="userDetail.driverTime == 1">个人驾龄：1年</div>
+                            <div v-else-if="userDetail.driverTime == 2">个人驾龄：2年</div>
+                            <div v-else-if="userDetail.driverTime == 3">个人驾龄：3年</div>
+                            <div v-else-if="userDetail.driverTime == 4">个人驾龄：3年以上</div>
+                        </div>
+                            <div class="detail" v-if="detailEvent.type == 2">
+                                <!--招副班-->
+                                <div>姓名：{{userDetail.userName || "无"}}</div>
+                                <div>手机号：{{userDetail.phoneNumber}}
+                                    <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNumber" style="vertical-align: -2px;" title="与注册账号不同">
+                                </div>
+                                <div>创建时间：{{userDetail.createTime}}</div>
+                                <div v-if="userDetail.type == 1">代班时间：白班 </div>
+                                <div v-else-if="userDetail.type == 2">代班时间：夜班 </div>
+                                <div v-else-if="userDetail.type == 3">代班时间：都可以 </div>
+            
+                                <div>接受哪几个区域交车：{{userDetail.provinceName}}  {{userDetail.cityName}}  (    {{userDetail.areasName}}    )</div>
+            
+                                <div v-if="userDetail.driverTime == 0">个人驾龄：不限</div>
+                                <div v-else-if="userDetail.driverTime == 1">个人驾龄：1年</div>
+                                <div v-else-if="userDetail.driverTime == 2">个人驾龄：2年</div>
+                                <div v-else-if="userDetail.driverTime == 3">个人驾龄：3年</div>
+                                <div v-else-if="userDetail.driverTime == 4">个人驾龄：3年以上</div>
+            
+                                <div v-if="userDetail.threeCertificateReady == 0">三证是否齐全：不要求 </div>
+                                <div v-else>三证是否齐全：要求 </div>
+                                
+                                <div v-if="userDetail.lessFifty == 1">要求是否小于50岁：要求</div>
+                                <div v-else>要求是否小于50岁：不要求</div>
+            
+                                <div v-if="userDetail.sameProvince == 1">是否要求老乡：要求
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <span v-if="userDetail.nativeName != ''">{{userDetail.nativeName}}</span>
+                                </div>
+                                <div v-else>是否要求老乡：不要求
+                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <span v-if="userDetail.nativeName != ''">{{userDetail.nativeName}}</span>
+                                </div>
+                             
+                            </div>
+                            <div class="detail" v-if="detailEvent.type == 3">
+                                <!--租车-->
+                                <div>
+                                    <div>姓名：{{userDetail.userName || "无"}} </div>
+                                    <div>手机号：{{userDetail.phoneNum}}
+                                        <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                    </div>
+                                    <div>申请时间：{{userDetail.createTime}}</div>
+                                    <div>要求的车型方案内容：</div>
+                                    <el-checkbox-group v-model="checkboxGroup2" disabled>
+                                        <el-checkbox style="margin-top: 10px;display: block" v-for="(val,index) in carTypeList" :label="val.id" :key="val.text" >{{val.text}}</el-checkbox>
+                                    </el-checkbox-group>
+                                </div>
+                            </div>
+            
+                            <div class="detail" v-if="detailEvent.type == 4">
+                                <!--亚滴出行-->
+                                <div>姓名：{{userDetail.userName}}</div>
+                                <div>手机号：{{userDetail.phoneNum}}
+                                    <img src="../../img/logo/warn.png"v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                </div>
+                                <div>申请时间：{{userDetail.createTime}}</div>
+                                <div>城市：
+                                    <el-select v-model="userDetail.city" disabled placeholder="请选择">
+                                        <el-option v-for="item in cityListAll" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                                    </el-select>
+                                </div> 
+                                <div v-if="userDetail.carType == 1">租车类型：比亚迪秦</div>
+                                <div v-else-if="userDetail.carType == 2">租车类型：比亚迪e5-450</div>
+                                <div v-else-if="userDetail.carType == 3">租车类型：比亚迪宋MAX</div>
+                                <div v-else-if="userDetail.carType == 4">租车类型：腾势</div>
+                            </div>
+                            <div class="detail" v-if="detailEvent.type == 5">
+                                <!--曹操约车-->
+               
+                                <div>姓名：{{userDetail.userName}}</div>
+                                <div>手机号：{{userDetail.phoneNum}}
+                                    <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                </div>
+                                <div>申请时间：{{userDetail.createTime}}</div>
+                                <div>城市：
+                                    <el-select v-model="userDetail.city" disabled placeholder="请选择">
+                                            <el-option v-for="item in cityListAll" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                                    </el-select>
+                                </div> 
+                                <div v-if="userDetail.speakAdderss">面试地址：{{userDetail.speakAdderss}}</div>
+                                <div v-if="userDetail.sex == 0">性别：男</div>
+                                <div v-else-if="userDetail.sex == 1">性别：女</div>
+                                <div>身份证：{{userDetail.identityCard}}</div>
+                                <div v-if="userDetail.driveAge == 0">个人驾龄：不限</div>
+                                <div v-else-if="userDetail.driveAge == 1">个人驾龄：1年</div>
+                                <div v-else-if="userDetail.driveAge == 2">个人驾龄：2年</div>
+                                <div v-else-if="userDetail.driveAge == 3">个人驾龄：3年</div>
+                                <div v-else-if="userDetail.driveAge == 4">个人驾龄：3年以上</div>
+                            </div>
+                            <div class="detail" v-if="detailEvent.type == 6">
+                                <!--首汽约车-->
+
+                                <div>姓名：{{userDetail.userName}}</div>
+                                <div>手机号：{{userDetail.phoneNum}}
+                                    <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                </div>
+                                <div>申请时间：{{userDetail.createTime}}</div>
+                                <div>城市：
+                                    <el-select v-model="userDetail.city" disabled placeholder="请选择">
+                                        <el-option v-for="item in cityListAll" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                                    </el-select>
+                                </div>
+                            </div>
+                            <div class="detail" v-if="detailEvent.type == 7">
+                                <!--精准约车-->
+
+                                <div>姓名：{{userDetail.userName}}</div>
+                                <div>手机号：{{userDetail.phoneNum}}
+                                    <img src="../../img/logo/warn.png"v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                </div>
+                                <div>申请时间：{{userDetail.createTime}}</div>
+                                <div>品牌：{{userDetail.carBrand}}</div>
+                                <div v-if="userDetail.powerType == 0">动力类型：不限</div>
+                                <div v-else-if="userDetail.powerType == 1">动力类型：汽油</div>
+                                <div v-else-if="userDetail.powerType == 2">动力类型：纯电动 </div>
+                                <div v-else-if="userDetail.powerType == 3">动力类型：油电混合</div>
+                                <div v-else-if="userDetail.powerType == 4">动力类型：油汽混合</div>
+                                <div v-if="userDetail.gearbox == 0">变速箱：不限</div>
+                                <div v-else-if="userDetail.gearbox == 1">变速箱：自动挡</div>
+                                <div v-else-if="userDetail.gearbox == 2">变速箱：手动挡</div>
+                                <div v-if="userDetail.displacement == 0">排量：不限</div>
+                                <div v-else-if="userDetail.displacement == 1">排量：1-2L</div>
+                                <div v-else-if="userDetail.displacement == 2">排量：2-3L</div>
+                                <div v-else-if="userDetail.displacement == 3">排量：3L以上</div>
+                                <div v-if="userDetail.carAge == 0">车龄：不限</div>
+                                <div v-else-if="userDetail.carAge == 1">车龄：新车</div>
+                                <div v-else-if="userDetail.carAge == 2">车龄：6个月以下</div>
+                                <div v-else-if="userDetail.carAge == 3">车龄：6-12个月</div>
+                                <div v-else-if="userDetail.carAge == 3">车龄：1-2年</div>
+                                <div v-else-if="userDetail.carAge == 4">车龄：2-3年</div>
+                                <div v-else-if="userDetail.carAge == 5">车龄：3年以上</div>
+                                <div>车款亮点：{{userDetail.preference}}</div>
+                                <div v-if="userDetail.rent == 0">租金：不限</div>
+                                <div v-else-if="userDetail.rent == 1">租金：2000-4000元</div>
+                                <div v-else-if="userDetail.rent == 2">租金：4000-6000元</div>
+                                <div v-else-if="userDetail.rent == 3">租金：6000元以上</div>
+                                <div v-if="userDetail.leaseTerm == 0">租期：不限</div>
+                                <div v-else-if="userDetail.leaseTerm == 1">租期：3个月以下</div>
+                                <div v-else-if="userDetail.leaseTerm == 2">租期：3-6个月</div>
+                                <div v-else-if="userDetail.leaseTerm == 3">租期：6-12个月</div>
+                                <div v-else-if="userDetail.leaseTerm == 4">租期：12-24个月</div>
+                                <div v-else-if="userDetail.leaseTerm == 5">租期：24个月以上</div>
+                            </div>
+                            <div class="psInfoListBox" v-if="psInfoList.length > 0">
+                                <p>信息完善：</p>
+                                <ul >
+                                   <li  v-for="item in psInfoList" class="flex">
+                                    <span :title="item.remark">{{item.remark}}</span>
+                                    <span>{{item.createTime}}</span>
+                                    <span>{{item.userName}}</span>
+                                   </li>
+                                </ul>
+                            </div>
+                            <span slot="footer" class="dialog-footer">
+                                <el-button @click="userDetailFlag = false">取 消</el-button>
+                                <!-- <el-button type="primary" @click="userDetailFlag = false">确 定</el-button> -->
+                            </span>
+                    </el-collapse-item>
+                </el-collapse>
+            </div>
+        </el-dialog>
+
+        <!-- 点击处理完成弹窗 -->
+        <el-dialog :title="processDetailTitile" :visible.sync="processFlag" width="50%" @closed="processFlagClose">
+                <div class="detail" >
+                        <!--周转-->
+                        <el-collapse v-model="activeNames">
+                            <el-collapse-item  title="账号信息" name="1">
+                                    <ul class="accountDetailBox">
+                                            <li>注册账号：{{accountDetail.phone_no || accountDetail.phoneNumber || accountDetail.phone_num}}</li>
+                                            <li>注册时间：{{accountDetail.create_time}}</li>
+                                            <li>城市：{{accountDetail.city || "无"}}</li>
+                                            <li><a :href="href">查看账号</a></li>
+                                        </ul>
+                                        <div>消费笔数：{{accountDetail.order_num}}</div>
+                                        <p>申请历史</p>
+                                        <ul v-for="item in historyOrder">
+                                             <li>
+                                                 <span class="item">{{item.createTime}}</span>
+                                                 <span class="item" v-if="item.type == 0">周转</span>
+                                                 <span class="item" v-else-if="item.type == 1">当副班</span>
+                                                 <span class="item" v-else-if="item.type == 2">招副班</span>
+                                                 <span class="item" v-else-if="item.type == 3">金牌租车</span>
+                                                 <span class="item" v-else-if="item.type == 4">亚滴租车</span>
+                                                 <span class="item" v-else-if="item.type == 5">曹操出行</span>
+                                                 <span class="item" v-else-if="item.type == 6">首汽约车</span>
+                                                 <span class="item" v-else-if="item.type == 7">精准租车</span>
+                                             </li>
+                                        </ul>
+                                      
+                            </el-collapse-item>
+
+                            <el-collapse-item title="当前申请详情" name="2">
+                                    <div v-if="detailEvent.type == 0">
+                                        <div>姓名：{{userDetail.userName}}</div>
+                                        <div>申请时间：{{userDetail.createTime}}</div>
+                                        <div>手机号：{{userDetail.phoneNum}}
+                                            <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no !=  userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                        </div>
+                                        <div v-if="userDetail.cycle == 1">周期：1 ~ 30天</div>
+                                        <div v-else-if="userDetail.cycle == 2">周期：30天 ~ 1年</div>
+                                        <div v-else-if="userDetail.cycle == 3">周期：1年以上</div>
+                                        
+                                        <div v-if="userDetail.job == 1">司机类型：出租车司机</div>
+                                        <div v-if="userDetail.job == 2">司机类型：网约车司机</div>
+        
+                                        <div v-if="userDetail.money == 1">金额：1000元 ~ 1万元</div>
+                                        <div v-else-if="userDetail.money == 2">金额：1万元 ~ 5万元</div>
+                                        <div v-else-if="userDetail.money == 3">金额：5万元以上</div>
+                                        <div v-if="userDetail.salary == 1">薪资范围：5000元 ~ 8000元</div>
+                                        <div v-else-if="userDetail.salary == 2">薪资范围：8000元 ~ 12000元</div>
+                                        <div v-else-if="userDetail.salary == 3">薪资范围：12000元 ~ 15000元</div>
+                                        <div v-else-if="userDetail.salary == 4">薪资范围：15000元以上</div>
+                                        <div v-if="userDetail.repayment == 1">还款类型：按日计息，随借随还</div>
+                                        <div v-else-if="userDetail.repayment == 2">还款类型：按月等额，长期超划算</div>
+                                        <div v-else-if="userDetail.repayment == 3">还款类型：按月付息，到期还本</div>
+                                        <div v-else-if="userDetail.repayment == 4">还款类型：一次性还本付息</div>
+                                        <div v-if="userDetail.special == 1">产品偏好：纯信用借款产品</div>
+                                        <div v-else-if="userDetail.special == 2">产品偏好：抵押借款产品（汽车、房产）</div>
+                                        <div v-if="userDetail.emergent == 1">紧急程度：越快越好，即刻需求</div>
+                                        <div v-else-if="userDetail.emergent == 2">紧急程度：近期有可能需要</div>
+                                        <div v-else-if="userDetail.emergent == 3">紧急程度：暂时不需要</div>
+                                    </div>
+                                    <div class="detail" v-if="detailEvent.type == 1">
+                                        <!--当副班-->
+                                        <div>姓名：{{userDetail.userName || "无"}}</div>
+                                        <div>籍贯省份：{{userDetail.nativeName || "无"}}</div>
+                                        <div>年龄：{{userDetail.age || "无"}}</div>
+                                        <div>手机号：{{userDetail.phoneNumber || "无"}}
+                                            <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNumber" style="vertical-align: -2px;" title="与注册账号不同">
+                                        </div>
+                                
+                                        <div v-if="userDetail.type == 1">副班代班时间：白班 </div>
+                                        <div v-else-if="userDetail.type == 2">副班代班时间：夜班 </div>
+                                        <div v-else-if="userDetail.type == 3">副班代班时间：都可以 </div>
+                        
+                                        <div>接受哪几个区域交车：{{userDetail.areasName}}</div>
+                                        <div v-if="userDetail.driverTime == 0">个人驾龄：不限</div>
+                                        <div v-else-if="userDetail.driverTime == 1">个人驾龄：1年</div>
+                                        <div v-else-if="userDetail.driverTime == 2">个人驾龄：2年</div>
+                                        <div v-else-if="userDetail.driverTime == 3">个人驾龄：3年</div>
+                                        <div v-else-if="userDetail.driverTime == 4">个人驾龄：3年以上</div>
+                                    </div>
+                                    <div class="detail" v-if="detailEvent.type == 2">
+                                        <!--招副班-->
+                                        <div>姓名：{{userDetail.userName || "无"}}</div>
+                                        <div>手机号：{{userDetail.phoneNumber}}
+                                                <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNumber" style="vertical-align: -2px;" title="与注册账号不同">
+                                            </div>
+                                            
+                                            <div v-if="userDetail.type == 1">代班时间：白班 </div>
+                                        <div v-else-if="userDetail.type == 2">代班时间：夜班 </div>
+                                        <div v-else-if="userDetail.type == 3">代班时间：都可以 </div>
+                    
+                                        <div>接受哪几个区域交车：{{userDetail.areasName}}</div>
+                                        
+                                        <div v-if="userDetail.driverTime == 0">个人驾龄：不限</div>
+                                        <div v-else-if="userDetail.driverTime == 1">个人驾龄：1年</div>
+                                        <div v-else-if="userDetail.driverTime == 2">个人驾龄：2年</div>
+                                        <div v-else-if="userDetail.driverTime == 3">个人驾龄：3年</div>
+                                        <div v-else-if="userDetail.driverTime == 4">个人驾龄：3年以上</div>
+                                        <div v-if="userDetail.threeCertificateReady == 0">三证是否齐全：不要求 </div>
+                                        <div v-else>三证是否齐全：要求 </div>
+                                        
+                                        <div v-if="userDetail.lessFifty == 1">要求是否小于50岁：要求</div>
+                                        <div v-else>要求是否小于50岁：不要求</div>
+                                    
+                                        <div v-if="userDetail.sameProvince == 1">是否要求老乡：要求
+                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                            <span v-if="userDetail.nativeName != ''">{{userDetail.nativeName}}</span>
+                                        </div>
+                                        <div v-else>是否要求老乡：不要求
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                            <span v-if="userDetail.nativeName != ''">{{userDetail.nativeName}}</span>
+                                        </div>
+                                    </div>
+                                        <div class="detail" v-if="detailEvent.type == 3">
+                                            <!--租车-->
+                                            <div>
+                                                <div>姓名：{{userDetail.userName || "无"}} </div>
+                                                <div>手机号：{{userDetail.phoneNum}}
+                                                        <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                                    </div>
+                                                <div>申请时间：{{userDetail.createTime}}</div>
+                                                <div>要求的车型方案内容：</div>
+                                                <el-checkbox-group v-model="checkboxGroup2" disabled>
+                                                    <el-checkbox style="margin-top: 10px;display: block" v-for="(val,index) in carTypeList" :label="val.id" :key="val.text" >{{val.text}}</el-checkbox>
+                                                </el-checkbox-group>
+                                            </div>
+                                        </div>
+                            
+                                        <div class="detail" v-if="detailEvent.type == 4">
+                                            <!--亚滴出行-->
+                                            <div>姓名：{{userDetail.userName}}</div>
+                                            <div>手机号：{{userDetail.phoneNum}}
+                                                    <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                                </div>
+                                            <div>申请时间：{{userDetail.createTime}}</div>
+                                            <div>城市：
+                                                <el-select v-model="userDetail.city" disabled placeholder="请选择">
+                                                    <el-option v-for="item in cityListAll" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                                                </el-select>
+                                            </div> 
+                                            <div v-if="userDetail.carType == 1">租车类型：比亚迪秦</div>
+                                            <div v-else-if="userDetail.carType == 2">租车类型：比亚迪e5-450</div>
+                                            <div v-else-if="userDetail.carType == 3">租车类型：比亚迪宋MAX</div>
+                                            <div v-else-if="userDetail.carType == 4">租车类型：腾势</div>
+                                        </div>
+                                        <div class="detail" v-if="detailEvent.type == 5">
+                                            <!--曹操约车-->
+                                            <div>姓名：{{userDetail.userName}}</div>
+                                            <div>手机号：{{userDetail.phoneNum}}
+                                                    <img src="../../img/logo/warn.png" v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                                </div>
+                                            <div>申请时间：{{userDetail.createTime}}</div>
+                                            <div>城市：
+                                                <el-select v-model="userDetail.city" disabled placeholder="请选择">
+                                                    <el-option v-for="item in cityListAll" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                                                </el-select>
+                                            </div> 
+                                            <div v-if="userDetail.speakAdderss">面试地址：{{userDetail.speakAdderss}}</div>
+                                            <div v-if="userDetail.sex == 0">性别：男</div>
+                                            <div v-else-if="userDetail.sex == 1">性别：女</div>
+                                            <div>身份证：{{userDetail.identityCard}}</div>
+                                            <div v-if="userDetail.driveAge == 0">个人驾龄：不限</div>
+                                            <div v-else-if="userDetail.driveAge == 1">个人驾龄：1年</div>
+                                            <div v-else-if="userDetail.driveAge == 2">个人驾龄：2年</div>
+                                            <div v-else-if="userDetail.driveAge == 3">个人驾龄：3年</div>
+                                            <div v-else-if="userDetail.driveAge == 4">个人驾龄：3年以上</div>
+                                        </div>
+                                        <div class="detail" v-if="detailEvent.type == 6">
+                                            <!--首汽约车-->
+                                            <div>姓名：{{userDetail.userName}}</div>
+                                            <div>手机号：{{userDetail.phoneNum}}
+                                                    <img src="../../img/logo/warn.png"v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                                </div>
+                                            <div>申请时间：{{userDetail.createTime}}</div>
+                                            <div>城市：
+                                                <el-select v-model="userDetail.city" disabled placeholder="请选择">
+                                                    <el-option v-for="item in cityListAll" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                                                </el-select>
+                                            </div>
+                                        </div>
+                                        <div class="detail" v-if="detailEvent.type == 7">
+                                            <!--精准约车-->
+                                            <div>姓名：{{userDetail.userName}}</div>
+                                            <div>手机号：{{userDetail.phoneNum}}
+                                                    <img src="../../img/logo/warn.png"v-if="accountDetail.phone_no != userDetail.phoneNum" style="vertical-align: -2px;" title="与注册账号不同">
+                                                </div>
+                                            <div>申请时间：{{userDetail.createTime}}</div>
+                                            <div>品牌：{{userDetail.carBrand}}</div>
+                                            <div v-if="userDetail.powerType == 0">动力类型：不限</div>
+                                            <div v-else-if="userDetail.powerType == 1">动力类型：汽油</div>
+                                            <div v-else-if="userDetail.powerType == 2">动力类型：纯电动 </div>
+                                            <div v-else-if="userDetail.powerType == 3">动力类型：油电混合</div>
+                                            <div v-else-if="userDetail.powerType == 4">动力类型：油汽混合</div>
+                                            <div v-if="userDetail.gearbox == 0">变速箱：不限</div>
+                                            <div v-else-if="userDetail.gearbox == 1">变速箱：自动挡</div>
+                                            <div v-else-if="userDetail.gearbox == 2">变速箱：手动挡</div>
+                                            <div v-if="userDetail.displacement == 0">排量：不限</div>
+                                            <div v-else-if="userDetail.displacement == 1">排量：1-2L</div>
+                                            <div v-else-if="userDetail.displacement == 2">排量：2-3L</div>
+                                            <div v-else-if="userDetail.displacement == 3">排量：3L以上</div>
+                                            <div v-if="userDetail.carAge == 0">车龄：不限</div>
+                                            <div v-else-if="userDetail.carAge == 1">车龄：新车</div>
+                                            <div v-else-if="userDetail.carAge == 2">车龄：6个月以下</div>
+                                            <div v-else-if="userDetail.carAge == 3">车龄：6-12个月</div>
+                                            <div v-else-if="userDetail.carAge == 3">车龄：1-2年</div>
+                                            <div v-else-if="userDetail.carAge == 4">车龄：2-3年</div>
+                                            <div v-else-if="userDetail.carAge == 5">车龄：3年以上</div>
+                                            <div>车款亮点：{{userDetail.preference}}</div>
+                                            <div v-if="userDetail.rent == 0">租金：不限</div>
+                                            <div v-else-if="userDetail.rent == 1">租金：2000-4000元</div>
+                                            <div v-else-if="userDetail.rent == 2">租金：4000-6000元</div>
+                                            <div v-else-if="userDetail.rent == 3">租金：6000元以上</div>
+                                            <div v-if="userDetail.leaseTerm == 0">租期：不限</div>
+                                            <div v-else-if="userDetail.leaseTerm == 1">租期：3个月以下</div>
+                                            <div v-else-if="userDetail.leaseTerm == 2">租期：3-6个月</div>
+                                            <div v-else-if="userDetail.leaseTerm == 3">租期：6-12个月</div>
+                                            <div v-else-if="userDetail.leaseTerm == 4">租期：12-24个月</div>
+                                            <div v-else-if="userDetail.leaseTerm == 5">租期：24个月以上</div>
+                                        </div>
+                                        <p v-if="psInfoList.length > 0">信息完善：</p>
+                                        <ul v-for="item in psInfoList">
+                                          <li>
+                                            <span class="item" :title="item.remark">{{item.remark}}</span> 
+                                            <span class="item">{{item.createTime}}</span> 
+                                            <span class="item">{{item.userName}}</span> 
+                                          </li>
+                                        </ul>
+                            </el-collapse-item> 
+                            <el-collapse-item title="当前处理进程" name="3">
+                               <ul v-for="item in ealWithInfoList">
+                                    <li class="flex">
+                                        <div>{{item.createTime}}</div>
+                                        <div>{{item.userName}}</div>
+                                        <div v-if="item.secondState == 0">待处理 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 1">处理中 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 2">处理完成 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 3">已取消  <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 4">处理失败 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 5">已关闭 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 11">信息完善 </div>
+                                        <div v-else-if="item.secondState == 12">无人接听 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 13">用户忙没时间 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 14">跟进匹配 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 15">初审通过 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 21">成功放款 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 22">成功匹配 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 23">成功租车 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 31">电话无人接听 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 32">服务不满足需求 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 33">不符合要求 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 34">只是了解情况 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div v-else-if="item.secondState == 35">匹配失败 <span v-if="item.isComplete == 1">信息完善</span></div>
+                                        <div :title="item.remark">{{item.remark}}</div>
+                                    </li>
+                               </ul>
+                            </el-collapse-item>
+                            <el-collapse-item title="处理申请" name="4">
+                                <p>表单信息完善</p>
+                                <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4}" maxlength=140 placeholder="请填写完善信息，例：W先生，50岁，10年驾龄，住龙岗，关外交车均可" v-model="handleFrom.psInfo"></el-input>
+                                <p>处理进度</p>
+                                <div>
+                                    <el-radio-group @change="changeHandleFromRadio" v-model="handleFrom.radio">
+                                        <el-radio label="1">跟进处理</el-radio>
+                                        <el-radio label="2">办理成功</el-radio>
+                                        <el-radio label="4">办理失败</el-radio>
+                                    </el-radio-group>
+                                    <el-select v-model="handleFrom.result" placeholder="请选择处理结果">
+                                        <el-option v-for="item in handleOptins" :key="item.key" :label="item.value" :value="item.key"></el-option>
+                                    </el-select>
+                                </div>
+                                <el-input style="margin-top: 20px" type="textarea" :autosize="{ minRows: 2, maxRows: 4}" maxlength=300 placeholder="请填写处理结果说明，例：已和用户达成初步意向" v-model="handleFrom.remark"></el-input>
+                                <div style="margin-top:20px" v-show="handleFrom.result == 15 || handleFrom.result == 12 || handleFrom.radio == 2">
+                                    <el-checkbox true-label="1"  false-label="0" v-model="handleFrom.isSend">短信通知</el-checkbox>
+                                    <el-input v-show=" handleFrom.result == 12 " style="width:200px" maxlength=300  placeholder="请填写呼叫时间" v-model="handleFrom.callTime" />
+                                </div>
+                            </el-collapse-item>
+                        </el-collapse>
+        
+                    </div>
+
+            <span slot="footer" class="dialog-footer">
+                <el-button type="primary" v-if="lookprocessDetailDisable == false" @click="processFlagSub">确 定</el-button>
+                <el-button @click="processFlag = false">取 消</el-button>
+            </span>
+        </el-dialog>
+    </div>
+</body>
+
+<script>
+    new Vue({
+        el: "#app",
+        data() {
+            return {
+                checked:"",
+                activeNames:['3',"4"],
+                dialogTitle: "",
+                checkboxGroup2: [],
+                userDetailFlag: false,
+                processFlag: false,
+                userDetail: {},
+                href:"",
+                processInputValue: "", //处理完成输入状态 
+                cityList: [],
+                cityListAll:[],
+                typeList: [
+                    {key: "0",value: "周转"},
+                    {key: "1",value: "当副班"},
+                    {key: "2",value: "招副班"},
+                    {key: "3",value: "租车"},
+                    {key: "4",value: "网约车合作"}
+                ],
+                handleStateList: [
+                    {key:"5",value:"待处理"},
+                    {key:"1",value:"跟进中"}, 
+                    {key:"2",value:"办理成功"},
+                    {key:"3",value:"已取消"},
+                    {key:"4",value:"办理失败"},
+                ],
+                form: {
+                    pageSize: 10,
+                    pageIndex: 1,
+                    city: "",
+                    type: "",
+                    phone:"",
+                    state: "",
+                    startTime:"",
+                    endTime:"",
+                    // userId:sessionStorage.ID,
+                    operId:"",          //客服用户编号
+                },
+                handleFrom:{
+                    psInfo:"",//完善信息
+                    result:"",
+                    radio:"1",
+                    isSend:"0",
+                    callTime:"",
+                    remark:""
+                },
+                //跟进处理下拉选项1
+                FollowUpHandle1:[
+                    {key:"11",value:"信息完善"},
+                    {key:"12",value:"无人接听"},
+                    {key:"13",value:"用户忙没时间"},
+                    {key:"14",value:"跟进匹配"},
+                    {key:"15",value:"初审通过"},
+                ], 
+                //跟进处理下拉选项2
+                FollowUpHandle2:[
+                    {key:"11",value:"信息完善"},
+                    {key:"12",value:"无人接听"},
+                    {key:"13",value:"用户忙没时间"},
+                    {key:"14",value:"跟进匹配"},
+                ],    
+                //办理成功下拉选项1     
+                handleSuccess1:[ {key:"21",value:"成功放款"} ],   
+                //办理成功下拉选项2       
+                handleSuccess2:[ {key:"22",value:"成功匹配"} ], 
+                //办理成功下拉选项3
+                handleSuccess3:[ {key:"23",value:"成功租车"}], 
+                //办理失败下拉选项1
+                handleFail1:[
+                    {key:"32",value:"服务不满足需求"},
+                    {key:"33",value:"不符合要求"},
+                    {key:"34",value:"用户了解情况"},
+                ],
+                //办理失败下拉选项2
+                handleFail2:[
+                    {key:"31",value:"电话无人接听"},
+                    {key:"32",value:"服务不满足需求"},
+                    {key:"33",value:"不符合要求"},
+                    {key:"34",value:"用户了解情况"},
+                    {key:"35",value:"匹配失败"},
+                ],
+                //处理进度的下拉选项
+                handleOptins:[],          
+                tableData: [], //表格显示数据
+                carTypeList: [], //车辆类型
+                csUserList:[],
+                total: 1,
+                type:"",
+                // resultData: {}, //定义全局变量存储处理完成传参数据
+                lookprocessDetailDisable: true, //禁用处理结果详情输入
+                processDetailTitile: "",
+                psInfoList:[],//申请完善信息列表数据
+                accountDetail:{},   //账号信息
+                historyOrder:[],    //历史订单列表
+                ealWithInfoList:[],     //当前处理进程
+                detailEvent:{},
+                currentIssueInfo:{},    //  根据申请编号查询当前状态信息结果
+            }
+        },
+        methods: {
+            //根据申请编号查询处理流程明细
+            getDealWithInfo(){
+                return axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/collect/querDealWithInfo",
+                    params:{issueId:this.detailEvent.id}
+                })
+            },
+
+
+            //根据用户编号获取申请历史10条数据
+            getRecentlyIssue(){
+               return axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/collect/queryRecentlyIssue",
+                    params:{userId:this.userDetail.userId ||this.userDetail.user_id}
+                })
+            },
+
+            //根据申请编号获取申请完善信息列表数据
+            getPSInfo(){
+               return axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/collect/queryPSInfo",
+                    params:{issueId:this.detailEvent.id}
+                })
+            },
+
+            //根据用户编号获取用户粗略信息
+            getUserRough(){
+                return axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName + "/user/queryUserRough",
+                    params:{userId:this.userDetail.userId || this.userDetail.user_id}
+                })
+            },
+
+            //详情按钮
+            detail(e) {
+                this.detailEvent = e;
+                this.href=`../user/userDetail.html?id=${e.user_id}&flag=1`  
+                if (e.type == 0) { //资金周转详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "周转详情" +  "  -  " + state;
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/collect/queryLoanDetail",
+                            params: { id: e.relate_id}
+                        })
+                        .then((res) => {
+                            this.userDetail = res.data.data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        this.userDetailFlag = true;
+                        })
+                        .catch( (error) => {
+                            console.log(error);
+                        });
+                        // 0-周转  1-当副班  2-招副班  3-租车  4-亚滴租车  5-曹操出行  6-首汽约车
+                } else if (e.type == 1) { //当副班详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "当副班详情" +  "  -  " + state;
+                    // this.getDetail("/work_driver/queryWorkDriverDetail",e)
+
+                    axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/work_driver/queryWorkDriverDetail",
+                        params: { id: e.relate_id }
+                    })
+                    .then((res) => {
+                        this.userDetail = res.data.data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        this.userDetailFlag = true;
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+                } else if (e.type == 2) { //招副班详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "招副班详情"+  "  -  " + state;
+                    // this.getDetail("/employ_driver/employDriverDetail",e)
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/employ_driver/employDriverDetail",
+                            params: { id: e.relate_id }
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            this.userDetail = data;
+                            this.userDetail = res.data.data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+
+                        }));
+                        this.userDetailFlag = true;
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                } else if (e.type == 3) { //租车详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "金牌租车详情"+  "  -  " + state;
+                    // this.getDetail("/collectCarInfo/findDetail",e)
+                    axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/collectCarInfo/findDetail",
+                        params: { id: e.relate_id }
+                    })
+                    .then((res) => {
+                        let data = res.data.data;
+                        let num = data.carType.split(",");
+                        for (let i = 0; i < num.length; i++) {
+                            this.checkboxGroup2.push(parseInt(num[i]))
+                        }
+                        this.userDetail = data;
+                        this.userDetail = res.data.data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+
+                        }));
+                        this.userDetailFlag = true;
+                    })
+                    .catch( (error)=> {
+                        console.log(error);
+                    });
+                } else if (e.type == 4) { //亚滴租车
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "亚滴租车详情"+  "  -  " + state;
+                    axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/collectYaDiInfo/findDetail",
+                        params: { id: e.relate_id }
+                    })
+                    .then((res) => {
+                        let data = res.data.data;
+                        data.city = parseInt(data.city);
+                        this.userDetail = data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+
+                        }));
+                        this.userDetailFlag = true;
+
+                    })
+                    .catch( (error)=> {
+                        console.log(error);
+                    });
+                } else if (e.type == 5) { //曹操出行
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "曹操出行"+  "  -  " + state;
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/collectCaoCaoInfo/findDetail",
+                            params: { id: e.relate_id}
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            data.city = parseInt(data.city);
+                            this.userDetail = data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        this.userDetailFlag = true;
+                        })
+                        .catch( (error) =>{
+                            console.log(error);
+                        });
+                } else if (e.type == 6) { //首汽约车
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "首汽约车"+  "  -  " + state;
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/collectShouQiInfo/findDetail",
+                            params: { id: e.relate_id}
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            data.city = parseInt(data.city);
+                            this.userDetail = data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        this.userDetailFlag = true;
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                }else if(e.type == 7){
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.dialogTitle = "精准租车"+  "  -  " + state;
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/collectPreciseCarInfo/findDetail",
+                            params: { id: e.relate_id}
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            this.userDetail = data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            // 两个请求现在都执行完成   
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        this.userDetailFlag = true;
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                }
+            },
+
+            getDetail(url,e){
+                axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + `${url}`,
+                        params: { id: e.relate_id}
+                    })
+                    .then((res) => {
+                        this.userDetail = res.data.data;
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            },
+
+            //改变状态封装
+            changeState(e,state,url,remark){
+                axios({
+                    method: 'post',
+                    url: pageUrl + backendPackageName + url,
+                    params: {
+                        userId: sessionStorage.ID,
+                        id: e.relate_id,
+                        state: state,
+                        result:remark
+                    }
+                })
+                .then((res) => {
+                    if(res.data.code !== "000000"){
+                        this.$message.error(res.data.message);return
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+
+            //处理按钮
+            completeProcessing(e) {
+                this.href=`../user/userDetail.html?id=${e.user_id}&flag=1`  
+              
+                 if(e.type == 0){
+                    this.handleOptins = this.FollowUpHandle1;
+                }else if(e.type == 1) {
+                    this.handleOptins = this.FollowUpHandle2;
+                }else if(e.type == 2) {
+                    this.handleOptins = this.FollowUpHandle2;
+                }else if(e.type == 3) {
+                    this.handleOptins = this.FollowUpHandle2;
+                }else if(e.type == 4) {
+                    this.handleOptins = this.FollowUpHandle2;
+                }else if(e.type == 5) {
+                    this.handleOptins = this.FollowUpHandle2;
+                }else if(e.type == 6) {
+                    this.handleOptins = this.FollowUpHandle2;
+                }else if(e.type == 7) {
+                    this.handleOptins = this.FollowUpHandle2;
+                }                
+                this.detailEvent = e;
+                this.getCurrentIssueInfo();
+                this.processFlag = true;
+                this.lookprocessDetailDisable = false;
+                if (e.type == 0) { //资金周转详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "周转" +  "  -  " + state;
+                    axios({ 
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/collect/queryLoanDetail",
+                        params: { id: e.relate_id}
+                    })
+                    .then((res) => {
+                        this.userDetail = res.data.data;
+                        
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            this.accountDetail = user.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            this.historyOrder = acct.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                    })
+                    .catch( (error) => {
+                        console.log(error);
+                    });
+                        // 0-周转  1-当副班  2-招副班  3-租车  4-亚滴租车  5-曹操出行  6-首汽约车
+                } else if (e.type == 1) { //当副班详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "当副班" +  "  -  " + state;
+                   
+                    axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/work_driver/queryWorkDriverDetail",
+                        params: { id: e.relate_id }
+                    })
+                    .then((res) => {
+                        this.userDetail = res.data.data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+                } else if (e.type == 2) { //招副班详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "招副班"+  "  -  " + state;
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/employ_driver/employDriverDetail",
+                            params: { id: e.relate_id }
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            this.userDetail = data;
+                            axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                } else if (e.type == 3) { //租车详情
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "金牌租车"+  "  -  " + state;
+                    axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/collectCarInfo/findDetail",
+                        params: { id: e.relate_id }
+                    })
+                    .then((res) => {
+                        let data = res.data.data;
+                        let num = data.carType.split(",");
+                        for (let i = 0; i < num.length; i++) {
+                            this.checkboxGroup2.push(parseInt(num[i]))
+                        }
+                        this.userDetail = data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                    })
+                    .catch( (error) =>{
+                        console.log(error);
+                    });
+                } else if (e.type == 4) { //亚滴租车
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "亚滴租车"+  "  -  " + state;
+                    axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/collectYaDiInfo/findDetail",
+                        params: { id: e.relate_id }
+                    })
+                    .then((res) => {
+                        let data = res.data.data;
+                        data.city = parseInt(data.city);
+                        this.userDetail = data;
+                        axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            this.historyOrder = acct.data.data;
+                            this.accountDetail = user.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                    })
+                    .catch( (error)=> {
+                        console.log(error);
+                    });
+                } else if (e.type == 5) { //曹操出行
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "曹操出行"+  "  -  " + state;
+                    // this.getDetail("/collectCaoCaoInfo/findDetail",e)
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/collectCaoCaoInfo/findDetail",
+                            params: { id: e.relate_id}
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            data.city = parseInt(data.city);
+                            this.userDetail = data;
+                            axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                } else if (e.type == 6) { //首汽约车
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "首汽约车"+  "  -  " + state;
+                    // this.getDetail("/collectShouQiInfo/findDetail",e)
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/collectShouQiInfo/findDetail",
+                            params: { id: e.relate_id}
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            data.city = parseInt(data.city);
+                            this.userDetail = data;
+                            axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                        .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                            this.accountDetail = user.data.data;
+                            this.historyOrder = acct.data.data;
+                            this.ealWithInfoList = ealWithInfo.data.data;
+                            if(perms.data.data)this.psInfoList = perms.data.data;
+                        }));
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                }else if(e.type == 7){
+                    let state = "";
+                    if(e.state == 0){
+                        state = "待处理"
+                    }else if (e.state == 1) {
+                        state = "处理中"
+                    }else if (e.state == 2) {
+                        state = "处理完成"
+                    }else if (e.state == 3) {
+                        state = "已取消"
+                    }else if (e.state == 4) {
+                        state = "处理失败"
+                    }else if (e.state == 5) {
+                        state = "已关闭"
+                    }
+                    this.processDetailTitile = "精准租车"+  "  -  " + state;
+                    axios({
+                            method: 'get',
+                            url: pageUrl + backendPackageName + "/collectPreciseCarInfo/findDetail",
+                            params: { id: e.relate_id}
+                        })
+                        .then((res) => {
+                            let data = res.data.data;
+                            data.city = parseInt(data.city);
+                            this.userDetail = data;
+                            axios.all([this.getUserRough(),this.getRecentlyIssue(),this.getPSInfo(),this.getDealWithInfo()])
+                            .then(axios.spread( (user,acct, perms,ealWithInfo) => {
+                                this.accountDetail = user.data.data;
+                                this.historyOrder = acct.data.data;
+                                this.ealWithInfoList = ealWithInfo.data.data;
+                                if(perms.data.data)this.psInfoList = perms.data.data;
+                            }));
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                }
+            },
+
+            //点击完成处理  提交按钮
+            processFlagSub() {
+                if( (this.handleFrom.result == 12 && this.handleFrom.isSend == 1) && this.handleFrom.callTime === ""){
+                    this.$message.error("请填写呼叫时间");
+                    return
+                }   
+                if(this.handleFrom.remark === "" ){
+                    this.$message.error("请填写处理结果说明");
+                    return  
+                }   
+
+                if(this.handleFrom.result === ""){
+                    this.$message.error("请选择处理结果");
+                    return
+                }else{
+                    if (this.detailEvent.type == 0) { //资金周转详情
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/collect/changeLoanInfo",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                    } else if (this.detailEvent.type == 1) { //当副班详情
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/work_driver/updateWorkDriverState",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                    } else if (this.detailEvent.type == 2) { //招副班详情
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/employ_driver/updateEmployDriverState",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error) => {
+                            console.log(error);
+                        });
+                    } else if (this.detailEvent.type == 3) { //租车详情
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/collectCarInfo/handle",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error) => {
+                            console.log(error);
+                        });
+                        
+                    } else if (this.detailEvent.type == 4) { //亚滴租车
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/collectYaDiInfo/handle",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                        
+                    } else if (this.detailEvent.type == 5) { //曹操出行
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/collectCaoCaoInfo/handle",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                    } else if (this.detailEvent.type == 6) { //首汽约车
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/collectShouQiInfo/handle",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error) => {
+                            console.log(error);
+                        });
+                    }else if(this.detailEvent.type == 7){
+                        axios({
+                            method: 'post',
+                            url: pageUrl + backendPackageName + "/collectPreciseCarInfo/handle",
+                            params: {
+                                userId: sessionStorage.ID,
+                                id: this.detailEvent.relate_id,
+                                state: this.handleFrom.radio,
+                                result:this.handleFrom.remark
+                            }
+                        })
+                        .then((res) => {
+                            if(res.data.code == "000000"){
+                                this.processSub();
+                                this.$message.success("处理成功");
+                                this.processFlag = false;this.getTableData()
+                            }else if(res.data.code != "000000"){
+                                this.$message.error("状态已更新,请刷新当前页面！");
+                            }
+                        })
+                        .catch( (error)=> {
+                            console.log(error);
+                        });
+                    }
+                }
+
+            },
+
+            //改变状态封装
+            changeState2(e,state,url,remark){
+               axios({
+                    method: 'post',
+                    url: pageUrl + backendPackageName + url,
+                    params: {
+                        userId: sessionStorage.ID,
+                        id: e.relate_id,
+                        state: state,
+                        result:remark
+                    }
+                })
+                .then((res) => {
+                   return res.data.code;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+
+
+            //处理提交按钮请求封装
+            processSub(){
+                return axios({
+                    method: 'post',
+                    url: pageUrl + backendPackageName + "/collect/saveIssueInfo",
+                    params: {
+                        issueId: this.detailEvent.id,
+                        createBy:sessionStorage.ID,
+                        state:this.handleFrom.radio,
+                        secondState:this.handleFrom.result,
+                        isSend:this.handleFrom.isSend,
+                        callTime:this.handleFrom.callTime,
+                        remark:this.handleFrom.remark,
+                        psInfo:this.handleFrom.psInfo,
+                        type:this.detailEvent.type,
+                        relateId:this.userDetail.id
+                    }
+                })
+            },
+
+            clear() {
+                this.form.city = "";
+                this.form.type = "";
+                this.form.state = "";
+                this.form.city="";
+                this.form.type="";
+                this.form.phone=""; 
+                this.form.state="";
+                this.form.startTime="";
+                this.form.endTime="";
+                this.form.operId="";          //客服用户编号
+            },
+
+            //获取表格数据
+            getTableData() {
+                if(this.form.startTime == null){
+                    this.form.startTime = ""
+                }
+                if(this.form.endTime == null){
+                    this.form.endTime = ""
+                }
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/collect/queryIssueDate",
+                    params: {
+                        pageSize: this.form.pageSize,
+                        pageIndex: this.form.pageIndex,
+                        city: this.form.city,
+                        type: this.form.type,
+                        phone:this.form.phone,
+                        state: this.form.state,
+                        startTime:this.form.startTime!="" ? this.form.startTime + " 00:00:00" : "",
+                        endTime:this.form.endTime!="" ? this.form.endTime + " 23:59:59" : "",
+                        userId:this.form.userId,
+                        operId:this.form.operId,          //客服用户编号
+                    }
+                })
+                .then((res) => {
+                    this.tableData = res.data.data.rows;
+                    this.total = res.data.data.total;
+
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            //完成处理弹框关闭
+            processFlagClose() {
+                this.handleFrom={
+                    psInfo:"",//完善信息
+                    result:"",
+                    radio:"1",
+                    isSend:"0",
+                    callTime:"",
+                    remark:""
+                }
+            },
+
+            //获取筛选列表的下拉框
+            getCarType() {
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/dic/selectByType",
+                    params: {dicType: 1}
+                })
+                .then((res) => {
+                    this.carTypeList = res.data.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            
+            //处理弹框中处理进度Radio切换时改变下拉框选项
+            changeHandleFromRadio(e){
+                this.handleFrom.result = "";
+                if(this.detailEvent.type == 0){
+                    if(e == 1 ){
+                        this.handleOptins = this.FollowUpHandle1;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess1;    
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail1;
+                    }
+                }else if (this.detailEvent.type == 1) {
+                    if(e == 1){
+                        this.handleOptins = this.FollowUpHandle2;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess2;
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail2;
+                    }
+                }else if (this.detailEvent.type == 2) {
+                    if(e == 1){
+                        this.handleOptins = this.FollowUpHandle2;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess2;
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail2;
+                    }
+                }else if (this.detailEvent.type == 3) {
+                    if(e == 1){
+                        this.handleOptins = this.FollowUpHandle2;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess3;
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail2;
+                    }
+                }else if (this.detailEvent.type == 4) {
+                    if(e == 1){
+                        this.handleOptins = this.FollowUpHandle2;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess3;
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail2;
+                    }
+                }else if (this.detailEvent.type == 5) {
+                    if(e == 1){
+                        this.handleOptins = this.FollowUpHandle2;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess3;
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail2;
+                    }
+                }else if (this.detailEvent.type == 6) {
+                    if(e == 1){
+                        this.handleOptins = this.FollowUpHandle2;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess3;
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail2;
+                    }
+                }else if (this.detailEvent.type == 7) {
+                    if(e == 1){
+                        this.handleOptins = this.FollowUpHandle2;
+                    }else if(e == 2){
+                        this.handleOptins = this.handleSuccess3;
+                    }else if (e == 4) {
+                        this.handleOptins = this.handleFail2;
+                    }
+                }
+                
+            },
+
+            // 根据申请编号查询当前状态信息
+            getCurrentIssueInfo(){
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/collect/queryCurrentIssueInfo",
+                    params:{issueId:this.detailEvent.id}
+                })
+                .then((res) => {
+                  if(res.data.data){
+                    this.currentIssueInfo = res.data.data ;
+                    this.handleFrom.radio = res.data.data.state+"";
+                    this.handleFrom.remark = res.data.data.remark;
+                    this.handleFrom.result = res.data.data.secondState+"";
+                  }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+
+            //查询后台客服人员列表-用于查询条件过滤
+            getCSUser(){
+                axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName + "/permission/queryCSUser",
+                })
+                .then((res) => {
+                    this.csUserList = res.data.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+
+            detailClosed(){
+                this.activeNames = ['3',"4"]
+            },
+            //分页改变时请求
+            change(e) {
+                this.form.pageIndex = e;
+                this.getTableData();
+            },
+            //获取城市下拉列表
+            getCity() {
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/collect/querIssueCity",
+                })
+                .then((res) => {
+                    this.cityList = res.data.data;
+                })
+                .catch( (error) =>{
+                    console.log(error);
+                });
+            },
+            //获取城市下拉列表
+            getCityAll() {
+                axios({
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/area/queryCityList",
+                })
+                .then((res) => {
+                    this.cityListAll = res.data.data;
+                })
+                .catch( (error)=> {
+                    console.log(error);
+                });
+            },
+
+            search(){
+                this.form.pageIndex = 1;
+                this.getTableData();
+            }
+
+        },
+        created() {
+            this.getCSUser();  //获取客服列表
+            this.getCity();
+            this.getCityAll()
+            this.getTableData();
+            this.getCarType();
+        },
+    })
+</script>
+</html>

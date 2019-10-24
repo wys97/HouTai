@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>layui</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="../../layui/css/layui.css"  media="all">
+  <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+  
+<style type="text/css">
+.layui-field-title {
+    margin: 10px 0 20px;
+    border-width: 0px 0 0;
+}
+</style>
+</head>
+<body id="app">
+    <fieldset class="layui-elem-field" style="margin-left: 50px;margin-top: 15px;margin-right: 50px;border-width: 0px;">  
+    	   <form class="layui-form" action="">
+			  	<table class="layui-table" lay-even="" lay-skin="row">
+  <colgroup>
+    <col width="150">
+    <col width="150">
+    <col width="200">
+    <col>
+  </colgroup>
+  <thead>
+    <tr>
+      <th width="20%">名称</th>
+      <th width="20%">实惠卡类型</th>
+      <th width="20%">有效期</th>
+      <th width="20%">总发行量</th>
+      <th width="20%">已领取</th>
+    </tr> 
+  </thead>
+  <tbody>
+    <tr>
+      <td>{{ vueShCardInfoPage.name }}</td>
+      <td>{{ vueShCardInfoPage.typeName }}</td>
+      <td>{{ vueShCardInfoPage.timeStr }}</td>
+      <td>{{ vueShCardInfoPage.initialAmount }}</td>
+      <td>{{ vueShCardInfoPage.minu }}</td>
+    </tr>
+    <tr>
+      <td>已提现</td>
+      <td>已兑换</td>
+      <td>领取但未使用</td>
+      <td>已冻结</td>
+      <td>已作废</td>
+    </tr>
+    <tr>
+      <td>{{ vueUserBenefitsInfoGroupPage.ytx }}</td>
+      <td>{{ vueUserBenefitsInfoGroupPage.ydh }}</td>
+      <td>{{ vueUserBenefitsInfoGroupPage.ylq }}</td>
+      <td>{{ vueUserBenefitsInfoGroupPage.wlq }}</td>
+      <td>{{ vueUserBenefitsInfoGroupPage.yzf }}</td>
+    </tr>
+  </tbody>
+</table>  
+				
+			  	<fieldset class="layui-elem-field">
+				  <legend>筛选查询</legend>
+				  
+				    <div class="layui-form-item">
+					    <div class="layui-inline">
+					      <label class="layui-form-label">使用状态:</label>
+					      <div class="layui-input-inline">
+					        <select name="state" id="state" lay-search="">
+					          <option value="">直接选择或搜索选择</option>
+					          <option value="0">未领取</option>
+					          <option value="2">已领取</option>
+					          <option value="4">已提现</option>
+					          <option value="5">已兑换</option>
+					          <option value="7">已作废</option>
+					        </select>
+					      </div>
+					    </div>
+					    <div id="idDiv" class="layui-inline">
+					      <label class="layui-form-label">编号：</label>
+					      <div class="layui-input-inline">
+					        <input class="layui-input" name="cardno" id="cardno" autocomplete="off">
+					      </div>
+					    </div>
+					    <div id="idDiv" class="layui-inline">
+					      <label class="layui-form-label">电话号码：</label>
+					      <div class="layui-input-inline">
+					        <input class="layui-input" name="userphone" id="userphone" autocomplete="off">
+					      </div>
+					      <button type="button" id="buttonId" class="layui-btn" data-type="reload">搜索</button>
+					      <button type="button" onclick="buttonClick()" class="layui-btn" data-type="reload">返回</button>
+					    </div>
+					  </div>
+					  
+					  
+				</fieldset>
+			</form>
+	  	<table class="layui-hide" id="test" lay-filter="test"></table>
+  	</fieldset>
+
+ <script type="text/html" id="textInput">
+	<input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="输入份数" class="layui-input">
+</script>
+ 
+
+
+<script src="../../layui/layui.js" charset="utf-8"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script>
+
+var app = new Vue({
+	el : '#app',
+	data : {
+		id : getUrlParam("id"),
+		pageUrl : pageUrl,
+		shihuiPackageName : shihuiPackageName,
+		vueShCardInfoPage : {},
+		vueUserBenefitsInfoGroupPage : {}
+	},
+	created: function () {
+		$.ajax({
+	    	type:'post',
+	    	url: pageUrl+shihuiPackageName+'/skManager/getShCardInfoDetails?id='+getUrlParam("id"),
+	    	data:'',
+	    	success:function(obj){
+	    		app.vueShCardInfoPage=obj;
+	    	}
+	    });
+		$.ajax({
+	    	type:'post',
+	    	url: pageUrl+shihuiPackageName+'/skManager/getUserBenefitsInfoGroup?id='+getUrlParam("id"),
+	    	data:'',
+	    	success:function(obj){
+	    		app.vueUserBenefitsInfoGroupPage=obj;
+	    	}
+	    });
+	}
+});
+
+layui.use(['form', 'layedit', 'laydate'], function(){
+	  var form = layui.form
+	  ,layer = layui.layer
+	  ,layedit = layui.layedit
+	  ,laydate = layui.laydate;
+	  var table = layui.table;
+	
+});
+
+layui.use('table', function(){
+	  var table = layui.table;
+	  
+	  table.render({
+	    elem: '#test'
+	    ,url:pageUrl+shihuiPackageName+'/userBenefitsInfoManager/getUserBenefitsInfoByShTypeId?id='+getUrlParam("id")
+	    ,title: '用户数据表'
+    	,width: 1615
+	    ,cols: [[
+	    	{type:'numbers'}
+	      ,{field:'benefitsNo', width:300, title: '实惠码'}
+	      ,{field:'userName', width:200, title: '领取人姓名'}
+	      ,{field:'userPhone', width:150, title: '领取人电话'}
+	      ,{field:'createTime', width:200, title: '领取时间'}
+	      ,{field:'stateName', width:150, title: '当前状态'}
+	      ,{field:'updateTime', width:200, title: '使用时间'}
+	      ,{field:'cardNo', title: '编号'}
+	    ]]
+	    ,id: 'benefitsReload'
+	    ,page: true
+	  });
+	  
+	  var $ = layui.$, active = {
+	    reload: function(){
+	      var title = $('#title');
+	      var type = $('#type');
+	      
+	      //执行重载
+	      table.reload('benefitsReload', {
+      	    url:pageUrl+shihuiPackageName+'/userBenefitsInfoManager/getUserBenefitsInfoByShTypeId?id='+getUrlParam("id")
+	        ,page: {
+	          curr: 1 //重新从第 1 页开始
+	        }
+	        ,where: {
+	        	state:$('#state').val(),
+	        	cardno:$('#cardno').val(),
+	        	userphone:$('#userphone').val()
+	        }
+	      });
+	    }
+	  };
+	  
+	  $('#buttonId').on('click', function(){
+		    var type = $(this).data('type');
+		    console.log(type);
+		    active[type] ? active[type].call(this) : '';
+		  });
+	  
+});
+
+function buttonClick(){
+	//window.location.href=pageUrl+backendPackageName+"/pages/skmanager/selectShTypeInfo.html";
+	window.location="selectShTypeInfo.html";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>问题分类管理</title>
+    <script src="../../js/vuejs/2.6.10/vue.js"></script>
+    <link rel="stylesheet" href="../../css/elementUI.css">
+    <link rel="stylesheet" href="../../css/newstyle.css">
+    <link rel="stylesheet" href="../../css/elementUItheme/pagination.css">
+<style>
+    [v-cloak] {
+        opacity: 0;
+    }
+    *{
+        margin: 0;
+        padding: 0;
+    }
+    .table-header .el-button,.search-button{
+        float: right;
+    }
+    .header{
+        margin-top: 20px;
+        padding: 15px 10px;
+        background-color: #f3f3f3;
+        border-top: 1px solid #e4e4e4;
+        border-bottom: 1px solid #e4e4e4;
+    }
+    .table-header{
+        height: 40px;
+        line-height: 40px;
+        padding: 10px;
+        background-color: #f3f3f3;
+        border-top: 1px solid #e4e4e4;
+        border-bottom: 1px solid #e4e4e4;
+        margin-top: 20px;
+    }
+    thead{
+        background-color: #f9fafc;
+    }
+    .formSubmitBox{
+        text-align: center;
+    }
+    .el-table th,.el-table td{
+        text-align: center
+    }
+</style>
+</head>
+<body>
+    <div id="app">
+
+        <div class="table-header">
+            <i></i>数据列表<el-button type="primary" size="mediu" @click="addClassifyFlag = true">添加分类</el-button>
+        </div>
+        <el-table :data="tableData" class="table" border style="width: 98%; margin: 10px auto 0 auto;">
+            <el-table-column prop="name" label="分类名称"></el-table-column>
+            <el-table-column prop="iconUrl" label="图标">
+                    <template slot-scope="scope"> <img :src="scope.row.iconUrl" width="80" height="80" class="head_pic"/></template>
+            </el-table-column>
+            <el-table-column prop="type" label="排序"></el-table-column>
+            <el-table-column prop="name" label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="edit(scope.row)">修改</el-button>
+                    <el-button type="text" @click="del(scope.row)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination layout="prev, pager, next" :total="total" :page-size="searchForm.pageSize" @current-change="changePage"></el-pagination>
+
+<!-- 添加分类 -->
+		<el-dialog title="添加分类" :visible.sync="addClassifyFlag">
+			<el-form :model="createData" ref="createData">
+				<el-form-item label="分类名称" :label-width="formLabelWidth">
+					<el-input style="width: 80%" v-model="createData.name" placeholder="请输入分类名称" autocomplete="off">
+					</el-input>
+				</el-form-item>
+				<el-form-item label="排序" :label-width="formLabelWidth">
+					<el-input style="width: 80%" v-model="createData.type" placeholder="请输入排序" autocomplete="off">
+					</el-input>
+				</el-form-item>
+
+				<el-form-item label="图标" :label-width="formLabelWidth" ref="addUpload">
+                    <el-upload class="marginL80" ref="icon" :class="{disabled:imgUrl !=''}" :action="action" :limit="1" :on-exceed="mainLimit" list-type="picture-card" :before-upload="detailImgBeforeUpload" :on-preview="seeMainImg" :on-success="mainUpload" :on-remove="mainRemove">
+                        <i class="el-icon-plus"></i>
+                    </el-upload>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer formSubmitBox">
+				<el-button type="primary" @click="submit">确 定</el-button>
+				<el-button @click="addClassifyFlag = false">取 消</el-button>
+			</div>
+        </el-dialog>
+<!-- 修改分类 -->
+        <el-dialog title="修改分类" ref="editData" :visible.sync="editClassifyFlag">
+                <el-form>
+                    <el-form-item label="分类名称" :label-width="formLabelWidth">
+                        <el-input style="width: 80%" v-model="editData.name" autocomplete="off">
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="排序" :label-width="formLabelWidth">
+                        <el-input style="width: 80%" v-model="editData.type" autocomplete="off">
+                        </el-input>
+                    </el-form-item>
+    
+                    <el-form-item label="图标" :label-width="formLabelWidth">
+                        <el-upload class="marginL80" :class="{disabled:imgUrl !=''}" :file-list="editData.bigImg" :action="action" :limit="1" :on-exceed="mainLimit" list-type="picture-card" :before-upload="detailImgBeforeUpload" :on-preview="seeMainImg" :on-success="mainUpload" :on-remove="mainRemove">
+                            <i class="el-icon-plus"></i>
+                        </el-upload>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer formSubmitBox">
+                    <el-button type="primary" @click="update">确 定</el-button>
+                    <el-button @click="editClassifyFlag = false">取 消</el-button>
+                </div>
+            </el-dialog>
+        
+    </div>
+</body>
+<script src="../../js/axios.min.js"></script>
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/common.js"></script>
+<script>
+    new Vue({
+        el: "#app",
+        data(){
+            return{
+                action: `${pageUrl}${userPackageName}/fileInfo/wangEditorFileUpload`,
+                imgUrl: '',       			//图片URL
+                formLabelWidth: '20%',
+                total: 0,
+                tableData: [],
+                searchForm: {
+                    pageIndex: 1,
+                    pageSize: 5,
+                },
+                editData: {
+                    id: this.id,
+                    type: this.type,
+                    name: this.name,
+                    iconUrl: this.iconUrl,
+                    isParent: 0,
+                    problemDesc: '',
+                    problemDeal: '',
+                    isDel: 1,
+                    createTime: '',
+                    updateTime: '',
+                },
+                createData: {
+                    type: this.type,
+                    name: this.name,
+                    iconUrl: '',
+                    isParent: 0,
+                    userId:sessionStorage.ID
+                },
+                addClassifyFlag: false,
+                editClassifyFlag: false,
+            }
+            
+        },
+        methods: {
+            getData() {                
+                axios({
+                    method: 'GET',
+                    url: pageUrl + userPackageName + "/backend_user_help/showParentQuestionList",
+                    params: this.searchForm
+                })
+                .then((res) => {
+                    this.total = res.data.total;
+                    this.tableData = res.data.rows;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+             },
+            del(e){
+					this.$confirm('是否确定删除该分类?', '提示', {
+						confirmButtonText: '确定',
+						cancelButtonText: '取消',
+						type: 'warning'
+						}).then(() => {
+							axios({
+								method: 'post',
+                                url: pageUrl + userPackageName + "/backend_user_help/delQuestion",
+                                params: {id: e.id,userId:sessionStorage.ID},
+							})
+							.then((res) => {
+								this.getData()
+								this.$message({
+									type: 'success',
+									message: '删除成功!'
+								});
+							})
+							.catch(function (error) {
+								console.log(error);
+							});
+						}).catch(() => {
+							this.$message({
+								type: 'info',
+								message: '已取消删除'
+							});          
+						});
+            },
+            edit(e){
+                this.editClassifyFlag = true;
+                axios({
+                    method: 'GET',
+                    url: pageUrl + userPackageName + "/backend_user_help/queryQuestionDetail",
+                    params: {id: e.id,userId:sessionStorage.ID}
+                })
+                .then((res) => {
+                    let data = res.data.data;
+                    data.bigImg = [{ name: "",url: ""}];
+                    data.bigImg[0].name = "imgName";
+                    data.bigImg[0].url = data.iconUrl;
+                    this.editData = data;
+                })
+            },
+            submit(){
+                let arr1 = [];
+                this.$refs.icon.uploadFiles.map((val) =>{
+                    arr1.push(val.response.data.src)
+                })
+                this.createData.iconUrl = arr1.join();
+                axios({
+                    method: 'POST',
+                    url: pageUrl + userPackageName + "/backend_user_help/createQuestion",
+                    params: this.createData
+                })
+                .then((res) => {
+                    if (res.data.code == "000000") {
+                        this.$message.success("添加成功");
+                        this.getData();
+                        this.addClassifyFlag = false;
+                    } 
+                    // else if(res.data.code == "000001"){
+                    //     console.log(1)
+                    //     if(this.createData.type == '' || this.createData.type == null){
+                    //         this.$message.error("排序不能为空！");
+                    //     } else{
+                    //         this.$message.error("请输入0~127间的整数！");
+                    //     }
+                    // } 
+                    else if(res.data.code == "005001"){
+                        this.$message.error("分类名称不能为空！");
+                    } else{
+                        this.$message.error(res.data.message);
+                    }
+                })
+                .catch(function (error){
+                    console.log(error);
+                })
+            },
+            update(){
+                axios({
+                    method: 'POST',
+                    url: pageUrl + userPackageName + "/backend_user_help/editQuestion",
+                    params: {
+                        id: this.editData.id,
+                        name: this.editData.name,
+                        type: this.editData.type,
+                        iconUrl: this.editData.iconUrl,
+                        isParent: 0,
+                        userId:sessionStorage.ID
+                    }
+                })
+                .then((res) => {
+                    if (res.data.code == "000000") {
+                        this.$message.success("修改成功");
+                        this.getData();
+                        this.editClassifyFlag = false;
+                    } else if(res.data.code == "005001"){
+                        this.$message.error("分类名称不能为空！");
+                    } else{
+                        this.$message.error(res.data.message);
+                    }
+                })
+                .catch(function (error){
+                    console.log(error);
+                })
+            },
+            changePage(e) {
+				this.searchForm.pageIndex = e;
+				this.getData();
+            },
+            mainLimit(files, fileList){
+				if(files.length >= 1){
+					this.$message.error("最多只能上传一张图片")
+				}
+			},
+
+			//商品大图上传成功时的钩子
+			mainUpload(files, fileList){
+				this.editData.iconUrl = files.data.src;
+				// this.imgId = files.data.id;
+			},
+
+			//商品大图上删除的钩子
+			mainRemove(file, fileList) {
+				if(file.code == "07001"){
+					this.$message.error("上传图片失败或图片不存在")
+				}
+				this.editData.iconUrl = "";
+			},
+
+			//商品大图查看时的钩子
+			seeMainImg(file){
+				this.dialogImageUrl = file.url;
+                this.dialogVisible = true;
+            },
+            detailImgBeforeUpload(file) {
+				const isJPG = file.type === "image/jpeg" || "image/png" || "image/jpg";
+				const isLt1M = file.size / 1024 / 1024 < 1;
+				if (!isJPG) {
+				this.$message.error('请传入JPEG、PNG、JPG格式图片!');
+				}
+				if (!isLt1M) {
+				this.$message.error('上传图片大小不能超过 1M!');
+				}
+				return isJPG && isLt1M;
+			},
+        },
+        created() {
+			 this.getData();
+        },
+        watch:{
+            addClassifyFlag(val) {
+                if (val == false) {
+                    this.createData.type = "";
+                    this.createData.name = "";
+                    this.$refs.icon.clearFiles();
+                }
+            },
+        }
+    })
+</script>
+</html>

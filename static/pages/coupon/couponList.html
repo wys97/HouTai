@@ -1,0 +1,265 @@
+
+
+
+<!-- 菜单管理 -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+</head>
+<!-- 引入样式 -->
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/axios.min.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/common.js"></script>
+<style>
+	[v-cloak] {
+		opacity: 0;
+	}
+	input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+</style>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<el-form :model="form" :inline="true"  label-width="100px" style="display: inline-block">
+				<el-form-item label="城市">
+					<el-select v-model="form.cityCode" clearable placeholder="请选择" @change="changeCity">
+						<el-option v-for="item in cityList" :key="item.codeC" :label="item.name" :value="item.codeC"></el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="取餐点">
+					<el-select v-model="form.storeId" clearable placeholder="请选择">
+						<el-option v-for="item in storeList" :key="item.id" :label="item.storeName" :value="item.id"></el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="优惠券名称">
+							<el-input v-model="form.name"></el-input>
+					</el-form-item>
+				<el-form-item>
+					<el-button type="primary" @click="onSubmit">查询</el-button>
+					<el-button @click="clear">重置</el-button>
+					<el-button type="primary" @click="couponAdd">添加优惠券</el-button>
+				</el-form-item>
+			</el-form>
+
+			<el-table style="width: 100%"  :data="tableList" border row-key="id">
+					<el-table-column prop="id" align="center" label="优惠券ID"></el-table-column>
+					<el-table-column prop="name" align="center" label="优惠券名称"></el-table-column>
+					<el-table-column prop="faceValue" align="center" label="优惠券金额"></el-table-column>
+					<el-table-column prop="cityName" align="center" label="试用城市"></el-table-column>
+					<el-table-column prop="createTime" align="center" label="创建时间"></el-table-column>
+					<el-table-column prop="endTime" align="center" label="有效期(天)"></el-table-column>
+					<el-table-column prop="" align="center" label="劵属性">
+						<template slot-scope="scope">
+							<el-button type="text" @click="detail(scope.row)">详情</el-button>
+						</template>
+					</el-table-column>
+					<el-table-column prop="" align="center" label="操作">
+						<template slot-scope="scope">
+							<el-button type="text" @click="edit(scope.row)">编辑</el-button>
+							<el-button type="text" @click="put(scope.row)">投放</el-button>
+							<el-button type="text" @click="del(scope.row)">删除</el-button>
+						</template>
+					</el-table-column>
+				</el-table>
+				<el-pagination background layout="prev, pager, next" :current-page.sync="form.pageNum" @current-change="change" :total="total"></el-pagination>
+
+				<!-- 详情弹框 -->
+				<el-dialog title="优惠券详情" :visible.sync="detailFlag" width="30%">
+					<p>优惠券名称：{{detailData.name}}</p>
+					<p>金额：{{detailData.faceValue}}元</p>
+					<p v-if="detailData.cityCode == 000000">适用城市：不限城市</p>
+					<p v-if="detailData.cityCode != 000000">适用城市：{{detailData.cityName}}</p>
+					<p v-if="detailData.storeId == 0">适用门店：不限门店</p>
+					<p v-if="detailData.storeId != 0">适用门店：{{detailData.storeName}}</p>
+					<p v-if="detailData.applyType == 1">适用品类：通用所有品类</p>
+					<p v-if="detailData.applyType == 2">适用品类：仅限菜品</p>
+					<p v-if="detailData.applyType == 3">适用品类：仅限商品</p>
+					<p v-if="detailData.applyUser == 0">适用对象：所有司机</p>
+					<p v-if="detailData.applyUser == 1">适用对象：出租车司机</p>
+					<p v-if="detailData.applyUser == 2">适用对象：网约车司机</p>
+					<p v-if="detailData.applyUser == 3">适用对象：普通司机</p>
+					<p v-if="detailData.useType == 1">适用门槛：无使用门槛</p>
+					<p v-if="detailData.useType == 2">适用门槛：消费满{{detailData.consumptionMoney}}元</p>
+					<p v-if="detailData.everyoneCollarNumber == 0">每人限领张数：不限</p>
+					<p v-else>每人限领张数：{{detailData.everyoneCollarNumber}}张</p>
+					<p v-if="detailData.eachDayNumber == 0">每日限领张数：不限</p>
+					<p v-else>每日限领张数：{{detailData.eachDayNumber}}张</p>
+					<p v-if="detailData.eachSingleUseNumber == 0">每单限使用张数：不限</p>
+					<p v-else>每单限使用张数：{{detailData.eachSingleUseNumber}}张</p>
+					<p>有效期：{{detailData.endTime}}天</p>
+					<p v-if="detailData.moneyType == 1">金额类型：固定金额</p>
+					<p v-else-if="detailData.moneyType == 2">金额类型：随机金额</p>
+					<span slot="footer" class="dialog-footer">
+						<el-button @click="detailFlag = false">取 消</el-button>
+					</span>
+				</el-dialog>
+		</div>
+	</div>
+</body>
+<script>
+	new Vue({
+		el: '#app',
+		data(){
+			return{
+				detailFlag:false,	//详情弹框
+				cityList:[],
+				storeList:[],
+				tableList:[],
+				form:{
+					cityCode:"",
+					storeId:"",
+					name:"",
+					pageNum:1,
+					pageSize:10,
+				},
+				total:0,
+				detailData:{},			//详情数据
+			}
+		},
+		methods: {
+			//获取城市下拉框
+			getCity(){
+				axios({
+					method: 'get',
+					url: pageUrl + eatPackageName + "/city/city_list",
+				})
+				.then((res) => {
+					this.cityList = res.data.data;
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+			//搜索
+			onSubmit(){
+				this.getTableData();
+			},
+
+			//添加优惠券
+			couponAdd(){
+				location.href='./couponAdd.html'
+			},
+		
+
+			//编辑
+			edit(e){
+				console.log(e);
+				location.href = `./couponEdit.html?id=${e.id}`
+			},
+
+			//投放
+			put(e){
+				location.href = `./couponPutIn.html?id=${e.id}`
+			},
+
+			//删除
+			del(e){
+				this.$confirm('是否删除该优惠券?', '提示', {
+					confirmButtonText: '确定',
+					cancelButtonText: '取消',
+					type: 'warning'
+				}).then(() => {
+					axios({
+						method: 'DELETE',
+						url: pageUrl + couponPackageName + "/coupon/deleteById",
+						params:{id:e.id,operateUserId:sessionStorage.ID}
+					})
+					.then((res) => {
+						if(res.data.code == "000000"){
+							this.$message.success('删除成功!');
+							this.getTableData();
+						}else{
+							this.$message.error(res.data.message);
+						}
+					})
+				}).catch(() => {});
+			},
+
+			//详情
+			detail(e){
+				this.detailFlag = true;
+				axios({
+					method: 'get',
+					url: pageUrl + couponPackageName + "/coupon/selectById",
+					params:{id:e.id}
+				})
+				.then((res) => {
+					this.detailData =  res.data.data;
+					console.log(this.detailData);
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+			//重置搜索信息
+			clear(){
+				this.form = {city:"",store:"",name:"",pageNum:1,pageSize:10,};
+
+			},
+			changeCity(e){
+				this.form.store = ""
+				axios({
+					method: 'get',
+					url: pageUrl + eatPackageName + "/storeManager/getCityFoodStoreInfo",
+					params:{cityCodes:e}
+				})
+				.then((res) => {
+					this.storeList = res.data.data;
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+			getTableData(){
+				axios({
+					method: 'get',
+					url: pageUrl + couponPackageName + "/coupon/findPageList",
+					params:this.form
+				})
+				.then((res) => {
+					console.log(res);
+					this.total = res.data.total
+					this.tableList = res.data.data;
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+			//分页改变时
+			change(e){
+				this.form.pageNum = e;
+				this.getTableData();
+			},
+
+
+
+		},
+		created() {
+			this.getCity();
+			this.getTableData()
+		},
+	})
+</script>
+
+</html>

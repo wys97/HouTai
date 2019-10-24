@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>layui</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="../../layui/css/layui.css"  media="all">
+  <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+  
+<style type="text/css">
+.layui-field-title {
+    margin: 10px 0 20px;
+    border-width: 0px 0 0;
+}
+.layui-box .layui-laypage-btn{
+	color: #fff;
+	background-color: #1aa094;
+	border-color: #1aa094;
+}
+select:focus{
+	border-color: #1aa094;
+}
+</style>
+</head>
+<body id="app">
+    <fieldset class="layui-elem-field" style="margin-left: 50px;margin-top: 15px;margin-right: 50px;border-width: 0px;">  
+    	   <form class="layui-form" action="">
+			  	<fieldset class="layui-elem-field">
+				  <legend>筛选查询</legend>
+				  
+				    <div class="layui-form-item">
+					    <div id="idDiv" class="layui-inline">
+					      <label class="layui-form-label">厨房名称:</label>
+					      <div class="layui-input-inline">
+					        <input class="layui-input" name="kitchenName" id="kitchenName" autocomplete="off">
+					      </div>
+					      <button type="button" class="layui-btn" data-type="reload">搜索</button>
+					    </div>
+					  </div>
+					  
+					  
+				</fieldset>
+			</form>
+	  	<table class="layui-hide" id="test" lay-filter="test"></table>
+  	</fieldset>
+
+ 
+ <script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+    <input type="button" class="layui-btn layui-btn-sm" value="添加中央厨房" onclick="toDetails()" lay-event="getCheckData"/>
+  </div>
+</script>
+
+<script type="text/html" id="barDemo">
+  <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script type="text/html" id="statusNameTpl">
+    <img src="{{ d.dishes_url }}" alt="菜品头图"/>
+</script>
+
+<script src="../../layui/layui.js" charset="utf-8"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script>
+var codeC;
+
+var app = new Vue({
+	el : '#app',
+	data : {
+		id : getUrlParam("id"),
+		pageUrl : pageUrl,
+		shihuiPackageName : shihuiPackageName,
+		eatPackageName : eatPackageName,
+		vueCityListPage : {}
+	},
+	created: function () {
+		$.ajax({
+	    	type:'post',
+	    	url: pageUrl+eatPackageName+'/city/getCityAll',
+	    	data:'',
+	    	success:function(obj){
+	    		codeC = obj[0].codeC;
+	    		app.vueCityListPage=obj;
+	    	}
+	    });
+	}
+});
+
+layui.use(['form', 'layedit', 'laydate'], function(){
+	  var form = layui.form
+	  ,layer = layui.layer
+	  ,layedit = layui.layedit
+	  ,laydate = layui.laydate;
+	  var table = layui.table;
+	
+});
+
+layui.use('table', function(){
+	  var table = layui.table;
+	  
+	  table.render({
+	    elem: '#test'
+	    ,url:pageUrl+eatPackageName+'/kitchenManager/getKitchenManagerAll'
+	    ,toolbar: '#toolbarDemo'
+	    ,title: '用户数据表'
+    	,width: 1615
+	    ,cols: [[
+	    	{type:'numbers'}
+	      ,{field:'id', width:80, title: '厨房ID', sort: true}
+	      ,{field:'code_cName', width:350, title: '城市'}
+	      ,{field:'kitchen_name', width:200, title: '厨房名称'}
+	      ,{fixed: 'right', title:'操作',  toolbar: '#barDemo'}
+	    ]]
+	    ,id: 'affairReload'
+	    ,page: true
+	  });
+	  
+	//监听行工具事件
+	  table.on('tool(test)', function(obj){
+	    var data = obj.data;
+	      if(obj.event === 'detail'){
+	    	  
+	      }else if(obj.event === 'del'){
+	    	  layer.confirm('确认删除吗？', function(index){
+	    		  $.ajax({
+	    		    	type:'post',
+	    		    	url: pageUrl+eatPackageName+'/kitchenManager/deleteKitchenById?id='+data.id,
+	    		    	data:'',
+	    		    	contentType:"application/json",
+	    		    	success:function(obj){
+	    		    		if(obj.status=='error'){
+	    		    			layer.msg(obj.info); 
+	    		    		}else{
+	    		    			layer.msg(obj.info);
+	    		    			$('#idDiv .layui-btn').click();
+	    		    		}
+	    		    	}
+	    		    });
+	    	  });
+	      } else if(obj.event === 'edit'){
+  		     //window.location.href=pageUrl+backendPackageName+"/pages/kitchen/updateKitchen.html?id="+data.id+"&ptri="+data.kitchen_food_store_info_ptri+"&codeC="+data.code_c;
+  		   window.location="updateKitchen.html?id="+data.id+"&ptri="+data.kitchen_food_store_info_ptri+"&codeC="+data.code_c;
+	      }
+	  });
+	
+	  
+	  var $ = layui.$, active = {
+	    reload: function(){
+	      var title = $('#kitchenName');
+	      
+	      //执行重载
+	      table.reload('affairReload', {
+      	    url:pageUrl+eatPackageName+'/kitchenManager/getKitchenManagerAll'
+	        ,page: {
+	          curr: 1 //重新从第 1 页开始
+	        }
+	        ,where: {
+	        	kitchenName:title.val()
+	        }
+	      });
+	    }
+	  };
+	  
+	  $('#idDiv .layui-btn').on('click', function(){
+		    var type = $(this).data('type');
+		    active[type] ? active[type].call(this) : '';
+		  });
+	  
+});
+
+function toDetails(){
+    //window.location.href=pageUrl+backendPackageName+"/pages/kitchen/insertKitchen.html";
+    window.location="insertKitchen.html";
+}
+</script>
+
+</body>
+</html>

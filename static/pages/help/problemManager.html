@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>问题管理</title>
+    <script src="../../js/vuejs/2.6.10/vue.js"></script>
+    <link rel="stylesheet" href="../../css/elementUI.css">
+    <link rel="stylesheet" href="../../css/newstyle.css">
+    <link rel="stylesheet" href="../../css/elementUItheme/pagination.css">
+<style>
+    [v-cloak] {
+        opacity: 0;
+    }
+    *{
+        margin: 0;
+        padding: 0;
+    }
+    .header{
+        margin-top: 20px;
+        padding: 15px 10px;
+        background-color: #f3f3f3;
+        border-top: 1px solid #e4e4e4;
+        border-bottom: 1px solid #e4e4e4;
+    }
+    .underline{
+        border-bottom: 1px solid #e4e4e4;
+    }
+    .el-form{
+        padding: 10px;
+    }
+    .el-form .el-form-item{
+        margin: 0;
+    }
+    .table-header{
+        height: 40px;
+        line-height: 40px;
+        padding: 10px;
+        background-color: #f3f3f3;
+        border-top: 1px solid #e4e4e4;
+        border-bottom: 1px solid #e4e4e4;
+        margin-top: 20px;
+    }
+    thead{
+        background-color: #f9fafc;
+    }
+    .right{
+        float: right;
+    }
+    .el-table th,.el-table td{
+        text-align: center
+    }
+    .common-block{
+        border: 2px solid #1aa094;
+        color: #1aa094;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 0 2px;
+        margin-left: 5px;
+    }
+    .tox-silver-sink{
+        z-index: 9999 !important
+    }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header"><i></i>筛选查询</div>
+        <el-form v-model="searchForm" :inline="true" class="underline">
+            <el-form-item label="问题类型">
+                <el-select clearable placeholder="全部" v-model="searchForm.type">
+                    <el-option v-for="item in extListData" :key="item.type" :label="item.name" :value="item.type">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="问题" class="searcharea">
+                <el-input class="search" v-model="searchForm.problemDesc"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" size="medium" @click="search">搜索</el-button>
+            </el-form-item>
+        </el-form>
+
+        <div class="table-header">
+            <i></i>数据列表<el-button type="primary" size="mediu" class="right" @click="addProblemFlag = true">添加问题</el-button>
+        </div>
+        <el-table :data="tableData" class="table" border style="width: 98%; margin: 10px auto 0 auto;">
+            <el-table-column prop="name" label="问题类型"></el-table-column>
+            <el-table-column prop="problemDesc" label="问题">
+                <template slot-scope="scope">
+                    <span>{{scope.row.problemDesc}}</span>
+                    <span v-if="scope.row.isCommon" class="common-block">常见</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="name" label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="query(scope.row)">查看</el-button>
+                    <el-button type="text" @click="edit(scope.row)">编辑</el-button>
+                    <el-button type="text" @click="del(scope.row)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination layout="prev, pager, next" :total="total" :page-size="searchForm.pageSize" @current-change="changePage"></el-pagination>
+
+<!-- 查看问题 -->
+        <el-dialog title="查看问题" :visible.sync="queryProblemFlag">
+            <el-form :model="queryData" ref="queryData">
+                <el-form-item label="问题类型：" :label-width="formLabelWidth">
+                    <el-select disabled placeholder="请选择类型" v-model="queryData.type">
+                        <el-option :label="queryData.name" :value="queryData.type"></el-option>
+                    </el-select>
+                    <el-checkbox disabled v-model="queryData.isCommon"></el-checkbox>设置为常见问题
+                </el-form-item>
+                <el-form-item label="问题" :label-width="formLabelWidth">
+                    <el-input disabled v-model="queryData.problemDesc" style="width: 80%" placeholder="请输入问题描述" autocomplete="off">
+                    </el-input>
+                </el-form-item>
+                <el-form-item label="应对方案" :label-width="formLabelWidth">
+                    <el-input disabled v-model="queryData.problemDeal" style="width: 80%" placeholder="请输入问题解决方法" autocomplete="off" type="textarea" rows="3">
+                    </el-input>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+
+<!-- 添加问题 -->
+<el-dialog title="添加问题" :visible.sync="addProblemFlag">
+        <el-form :model="addProblemData" ref="addProblemData">
+            <el-form-item label="问题类型" :label-width="formLabelWidth">
+                <el-select placeholder="请选择类型" v-model="addProblemData.type" @change="selectLabel">
+                    <el-option v-for="item in extListData" :key="item.type" :label="item.name" :value="item.type" :name="addProblemData.name"></el-option>
+                </el-select>
+                <el-checkbox v-model="addProblemData.isCommon"></el-checkbox>设置为常见问题
+            </el-form-item>
+            <el-form-item label="问题" :label-width="formLabelWidth">
+                <el-input v-model="addProblemData.problemDesc" style="width: 80%" placeholder="请输入问题描述" autocomplete="off">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="应对方案" :label-width="formLabelWidth">
+                    <div class="textarea1"></div>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer formSubmitBox">
+            <el-button type="primary" @click="addSub">确 定</el-button>
+            <el-button @click="addProblemFlag = false">取 消</el-button>
+        </div>
+    </el-dialog>
+
+<!-- 编辑问题 -->
+<el-dialog title="编辑问题" :visible.sync="editProblemFlag">
+    <el-form :model="editData" ref="editData">
+        <el-form-item label="问题类型：" :label-width="formLabelWidth">
+            <el-select placeholder="请选择类型" v-model="editData.type" @change="selectLabel1">
+                <el-option v-for="item in extListData" :key="item.type" :label="item.name" :value="item.type" :name="editData.name"></el-option>
+            </el-select>
+            <el-checkbox v-model="editData.isCommon"></el-checkbox>设置为常见问题
+        </el-form-item>
+        <el-form-item label="问题" :label-width="formLabelWidth">
+            <el-input v-model="editData.problemDesc" style="width: 80%" placeholder="请输入问题描述" autocomplete="off">
+            </el-input>
+        </el-form-item>
+        <el-form-item label="应对方案" :label-width="formLabelWidth">
+            <!-- <el-input v-model="editData.problemDeal" style="width: 80%" placeholder="请输入问题解决方法" autocomplete="off" type="textarea" rows="3">
+            </el-input> -->
+            <div class="textarea1"></div>
+        </el-form-item>
+    </el-form>
+    <div slot="footer" class="dialog-footer formSubmitBox">
+        <el-button type="primary" @click="editSub">确 定</el-button>
+        <el-button @click="editProblemFlag = false">取 消</el-button>
+    </div>
+</el-dialog>
+        
+</div>
+</body>
+<script src="../../js/axios.min.js"></script>
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/common.js"></script>
+<script src="../../js/tinymce/tinymce.min.js"></script>
+<script src="../../langs/zh_CN.js"></script>
+<script>
+  
+    new Vue({
+        el: "#app",
+        data(){
+            return{
+                total: 0,
+                tableData: [],
+                extListData: [],
+                addProblemData: {
+                    type: '',
+                    name: '',
+                    isParent: '',
+                    problemDesc: this.problemDesc,
+                    problemDeal: this.problemDeal,
+                    isCommon: false,
+                    userId:sessionStorage.ID
+                },
+                searchForm:{
+                    pageIndex: 1,
+                    pageSize: 5,
+                    type: '',
+                    problemDesc: '',
+                },
+                queryData: {
+                    id: this.id,
+                    type: this.type,
+                    name: this.name,
+                    isParent: this.isParent,
+                    problemDeal: this.problemDeal,
+                    problemDesc: this.problemDesc,
+                    isDel: this.isDel,
+                    isCommon: this.isCommon,
+                    createTime: '',
+                    updateTime: '',
+                },
+                editData: {
+                    id: '',
+                    type: '',
+                    name: '',
+                    isCommon: false, //未添加
+                    isParent: '',
+                    problemDesc: '',
+                    problemDeal: '',
+                    isDel: 1,
+                    userId:sessionStorage.ID
+                },
+                addProblemFlag: false,
+                queryProblemFlag: false,
+                editProblemFlag: false,
+                formLabelWidth: '20%',
+                // editClassifyFlag: false,
+            }
+        },
+        methods: {
+            getData() {         
+                axios({
+                    method: 'GET',
+                    url: pageUrl + userPackageName + "/backend_user_help/showSubQuestionList",
+                    params: {
+                        pageIndex: this.searchForm.pageIndex,
+                        pageSize: this.searchForm.pageSize
+                    }
+                })
+                .then((res) => {
+                    this.total = res.data.total;
+                    this.tableData = res.data.rows;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+             },
+             changePage(e) {
+				this.searchForm.pageIndex = e;
+				this.getData();
+            },
+            query(e){
+                this.queryProblemFlag = true;
+                axios({
+                    method: 'GET',
+                    url: pageUrl + userPackageName + "/backend_user_help/queryQuestionDetail",
+                    params: {id: e.id,userId:sessionStorage.ID}
+                })
+                .then((res) => {
+                    let data = res.data.data;
+                    data.isCommon = (data.isCommon == 0) ? false : true;
+                    this.queryData= data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            addSub(){
+                this.addProblemData.isCommon = (this.addProblemData.isCommon == true) ? 1 : 0;
+                this.addProblemData.problemDeal = this.getText();
+                axios({
+                    method: 'POST',
+                    url: pageUrl + userPackageName + "/backend_user_help/createQuestion",
+                    params: this.addProblemData
+                })
+                .then((res) => {
+                    if (res.data.code == "000000") {
+                        this.$message.success("添加成功");
+                        this.getData();
+                        this.addProblemFlag = false;                    
+                    } else {
+                        this.addProblemData.isCommon = (this.addProblemData.isCommon == 1) ? true : false;
+                        this.$message.error(res.data.message);
+                    }
+                })
+                .catch(function (error){
+                    console.log(error);
+                });
+            },
+            edit(e){ 
+                this.editProblemFlag = true;
+                axios({
+                    method: 'GET',
+                    url: pageUrl + userPackageName + "/backend_user_help/queryQuestionDetail",
+                    params: {id: e.id}
+                })
+                .then((res) => {
+                    let data = res.data.data;
+                    data.isCommon = (data.isCommon == 0) ? false : true;
+                    this.editData = data;
+                    setTimeout(() => {
+                        tinyMCE.activeEditor.setContent(this.editData.problemDeal);
+                    },500);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            editSub(){
+                this.editData.isCommon = (this.editData.isCommon == true) ? 1 : 0;
+                axios({
+                    method: 'POST',
+                    url: pageUrl + userPackageName + "/backend_user_help/editQuestion",
+                    params: {
+                        id: this.editData.id,
+                        type: this.editData.type,
+                        name: this.editData.name,
+                        isParent: this.editData.isParent,
+                        isCommon: this.editData.isCommon,
+                        problemDesc: this.editData.problemDesc,
+                        problemDeal: this.getText(),
+                        userId:sessionStorage.ID
+                    }
+                })
+                .then((res) => {
+                    if (res.data.code == "000000") {
+                        this.$message.success("编辑成功");
+                        this.getData();
+                        this.editProblemFlag = false;
+                    } else {
+                        this.editData.isCommon = (this.editData.isCommon == 1) ? true : false;
+                        this.$message.error(res.data.message);
+                    }
+                })
+                .catch(function (error){
+                    console.log(error);
+                });
+            },
+            del(e){
+                this.$confirm('是否确定删除该问题?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                    }).then(() => {
+                        axios({
+                            method: 'post',
+                            url: pageUrl + userPackageName + "/backend_user_help/delQuestion",
+                            params: {id: e.id,userId:sessionStorage.ID},
+                        })
+                        .then((res) => {
+                            this.getData()
+                            this.$message({
+                                type: 'success',
+                                message: '删除成功!'
+                            });
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                    }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消删除'
+                        });          
+                    });
+            },
+            getExtList(){
+                axios({
+                    method: 'GET',
+                    url: pageUrl + userPackageName + "/backend_user_help/getParentExtList",
+                })
+                .then((res) => {
+                    this.extListData = res.data.data;
+                })
+                .catch(function (error){
+                    console.log(error);
+                });
+            },
+            selectLabel(val){
+                let obj = {};
+                obj = this.extListData.find((item) => {
+                    return item.type === val;
+                });
+                this.addProblemData.name = obj.name;
+                this.addProblemData.isParent = obj.id;
+            },
+            selectLabel1(val){
+                let obj = {};
+                obj = this.extListData.find((item) => {
+                    return item.type === val;
+                });
+                this.editData.name = obj.name;
+                this.editData.isParent = obj.id;
+            },
+            search(){
+                axios({
+                    method: 'GET',
+                    url: pageUrl + userPackageName + "/backend_user_help/getSubQuestionListByType",
+                    params: this.searchForm
+                })
+                .then((res) => {
+                    this.total = res.data.total;
+                    this.tableData = res.data.rows;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            getText(){
+                let activeEditor = tinymce.activeEditor;
+                let editBody = activeEditor.getBody();
+                activeEditor.selection.select(editBody);
+                let text = activeEditor.selection.getContent();
+                
+                let imgReg = /<img.*?(?:>|\/>)/gi;
+                let srcReg = /src="([^"]*)"/
+                let arr = text.match(imgReg);
+                text = text;
+                if(text == '<p>&nbsp;</p>'){
+                    text = '';
+                }
+                return text;
+            },
+            cleanText(){
+                // let activeEditor = tinymce.activeEditor;
+                // let editBody = activeEditor.getBody();
+                // activeEditor.selection.select(editBody);
+                // activeEditor.selection.setContent() = "";
+                tinyMCE.editors[0].setContent('');
+            }
+        },
+        updated(){
+            tinymce.init({
+                    selector: '.textarea1',
+                    plugins: 'image code autoresize', 
+                    language: 'zh_CN',
+                    // menubar: false,
+                    // toolbar1: 'bold italic underline strikethrough subscript superscript align formats | forecolor backcolor',
+                    // toolbar2: 'fontselect fontsizeselect',
+                    font_formats: `
+                        微软雅黑=微软雅黑;
+                        宋体=宋体;
+                        黑体=黑体;
+                        仿宋=仿宋;
+                        楷体=楷体;
+                        隶书=隶书;
+                        幼圆=幼圆;
+                        Andale Mono=andale mono,times;
+                        Arial=arial, helvetica,
+                        sans-serif;
+                        Arial Black=arial black, avant garde;
+                        Book Antiqua=book antiqua,palatino;
+                        Comic Sans MS=comic sans ms,sans-serif;
+                        Courier New=courier new,courier;
+                        Georgia=georgia,palatino;`,
+
+                    images_upload_handler: function (blobInfo, success, failure) {
+                        var xhr, formData;
+                        xhr = new XMLHttpRequest();
+                        xhr.withCredentials = false;
+                        xhr.open('POST','http://47.107.118.242:8763/heque-user/fileInfo/wangEditorFileUpload');
+                        xhr.onload = function () {
+                            var json;
+                            if (xhr.status != 200) {
+                                failure('HTTP Error: ' + xhr.status);
+                                return;
+                            }
+                            json = JSON.parse(xhr.responseText).data;
+                            success(json.src);
+                        };
+
+                        formData = new FormData();
+                        formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                        xhr.send(formData);
+                    },
+                }); 
+
+        },
+        created(){
+            this.getData();
+            this.getExtList();
+        },
+        watch:{
+            addProblemFlag(val) {
+                if (val == false) {
+                    this.addProblemData.type = "";
+                    this.addProblemData.name = "";
+                    this.addProblemData.isCommon = "";
+                    this.addProblemData.problemDeal = "";
+                    this.addProblemData.problemDesc = "";
+                    this.cleanText();
+                }
+            },
+        },
+    })
+</script>
+</html>

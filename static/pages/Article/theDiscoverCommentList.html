@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+<style>
+li {
+list-style-type:none;
+}
+a{ text-decoration:none} 
+</style>
+</head>
+<body id="app">
+	<form id="form">
+
+		<table align="left" width="80%" height="80%" border="0" cellpadding="0" cellspacing="0">  
+			<tbody class="text-c" v-for="item in discoverCommentList.data">
+			<tr>  
+				<td rowspan="2" width="10%"><img src="{{item.portraitFid}}"></img></td>  
+				<td><p>{{item.commentContent}}</p></td>
+			</tr>  
+			<tr>  
+				<td>{{item.commentTime}}  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#" >隐藏</a>   &nbsp;&nbsp;&nbsp;&nbsp;
+				<!-- /commLike/comment?id={{idVue}} -->
+				<a href="#" onclick="javascript:return del({{item.id}});"> 删除</a></td>  
+			</tr>
+			</tbody>
+	
+			<div v-show="discoverCommentList.total > 0" class="laypage_main laypageskin_default" style="margin-top: 10px">
+				<div class="l">
+					<span> 每页 <select name="pageSizeSelect" id="pageSizeSelect" style="vertical-align: baseline !important; height: 27.6px;" onchange="query()">
+							<option value="10" selected="selected">10</option>
+							<option value="25">25</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+					</select> 条 显示 {{discoverCommentList.page}} 到 {{discoverCommentList.totalPage}} ，共 {{discoverCommentList.total}} 条
+					</span>
+				</div>
+				<div id="pageNav" class="r"></div>
+			</div>	
+		</table> 
+	</form>
+<input type="hidden" id="id" value="{{idVue}}"/>
+</body>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/laypage/1.3/laypage.js"></script>
+<script type="text/javascript">
+var id = $(window.parent.document).find("#id").val();
+var app = new Vue({
+	el : '#app',
+	data : {
+		discoverCommentList : {},
+		idVue : id
+	}/* ,
+	created : function () {
+		this.updatePageInput();
+	} ,
+	methods:{
+		updatePageInput(){
+			$.ajax({
+			    type:'GET',
+			    url: pageUrl + appPackageName + '/commLike/getDiscoverComment?discoverId=' + id,
+			    data: id,
+			    success:function(obj){
+			    	app.discoverCommentList = obj;
+			    }
+			});
+		},
+	} */
+});
+$(function(){
+	query();
+})
+layui.use([ 'form', 'layedit' ], function() {
+	var form = layui.form, layer = layui.layer, layedit = layui.layedit;
+	layedit.build('content',{
+		height: 1800, //设置编辑器高度
+		contenteditable: false
+	}); //建立编辑器
+}); 
+
+function del(id) {
+		layer.confirm('确认要删除吗？', function() {
+		var tipIndex = null;
+		$.ajax({
+			type : "POST",
+			url : pageUrl + appPackageName + "/commLike/commentDel",
+			data : {
+				id : id
+			},
+			beforeSend : function() {
+				tipIndex = layer.load(0, {
+					shade : false
+				});
+			},
+			complete : function() {
+				layer.close(tipIndex);
+			},
+			error : function(request) {
+				layer.alert("系统出错");
+			},
+			success : function(data) {
+				if (data.code == 000000) {
+					layer.alert("删除成功");
+					query();
+				}else {
+					layer.alert(data.message);
+					query();
+				}
+			}
+		});
+	});
+} 
+
+/*
+ * 查询
+ */
+function query(pageNo, pageSize) {
+	if (!pageNo) {
+		pageNo = 1;
+	}
+	if (!pageSize) {
+		pageSize = $("#pageSizeSelect").val();
+	}
+	var paramObj = new Object();
+	paramObj.discoverId = parseInt(id);
+	$.ajax({
+		type : "GET",
+		url : pageUrl + appPackageName + "/commLike/getDiscoverComment?pageNum="+pageNo+"&pageSize="+pageSize + "&discoverId=" + id,
+		data :  paramObj,
+		success : function(result) {
+			app.discoverCommentList = result;
+			laypage({
+				cont : 'pageNav',
+				pages : result.totalPage,
+				curr : result.page,
+				skip : true,
+				groups : 6,
+				jump : function(obj, first) {
+					if (!first) {
+						query(obj.curr);
+					}
+				}
+			});
+		}
+	});
+}
+</script>
+</html>

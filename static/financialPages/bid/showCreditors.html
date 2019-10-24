@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+<style>
+table,tr,td,th{
+	padding: 0;
+	margin: 0;
+	font-size: 12px;
+}
+table{
+	border-color: #ddd;
+	table-layout:fixed;
+}
+table tr{
+	line-height: 38px;
+	border:1px solid #ddd;
+}
+table th{
+	text-align: center;
+	border:1px solid #ddd;
+	background:#eee;
+	color:#666;
+	font-weight:500;
+}
+table td{
+	text-align: center;
+	border:1px solid #ddd;
+	color:#888;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+input {
+	border:1px solid transparent;
+	text-align:center;
+	width:100px;
+}
+</style>
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false">
+			<fieldset>
+				<div id="creditorsList"></div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" onclick="cancel()">关闭</button>
+						</div>
+					</div>
+				</div>
+				<br/>
+			</fieldset>
+		</form>
+	</div>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript" src="../../js/dateUtil.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+var layedit;
+var layer;
+layui.use(['form','layer','layedit'], function(){
+	layer = layui.layer;
+	
+	var form=layui.form;
+	form.render('select');
+	
+	layedit = layui.layedit;
+	
+	initData();
+});
+
+function initData(){
+	var id=getUrlParam("id");
+	
+	$.ajax({
+		type : 'get',
+		url : domainName + '/api-P2P/bidCreditors/allbidc',
+		data: {bidId:id},
+		async: false,
+		success : function(data) {
+			if(data!=null){
+				if(data.length > 0){
+					var length = data.length;
+					if(length>0){
+						for(var i=0;i<length;i++){
+							addStr(i);
+							
+							$("#id"+i).val(data[i].id);
+							$("#userPhone"+i).val(data[i].userPhone);
+							var status = data[i].status;
+							if(status == 1){
+								$("#status"+i).val("已流标");
+							}else if(status == 2){
+								$("#status"+i).val("出借中");
+							}else if(status == 3){
+								$("#status"+i).val("已回款");
+							}else if(status == 4){
+								$("#status"+i).val("已逾期");
+							}else if(status == 7){
+								$("#status"+i).val("已完结");
+							}else if(status == 8){
+								$("#status"+i).val("投标中");
+							}
+							
+							$("#dealMoney"+i).val(data[i].dealMoney);
+							$("#endTime"+i).val(data[i].endTime);
+							$("#startTime"+i).val(data[i].startTime);
+							$("#interest"+i).val(data[i].interest);
+							
+							var transfer = data[i].transfer;
+							if(transfer == 1){
+								$("#transfer"+i).val("转让中");
+							}else if(transfer == 2){
+								$("#transfer"+i).val("已转让");
+							}else if(transfer == 3){
+								$("#transfer"+i).val("未转让");
+							}
+						}
+					}
+				}
+			}
+		}
+	});	
+}
+
+function addStr(i){
+	var str = '\
+		<div class="form-group" id="creditorsList'+i+'">\
+			<label class="col-sm-1 control-label"></label>\
+				<table id="table'+i+'" width="800">\
+					<thead>\
+						<tr>\
+						    <th>id</th>\
+							<th>手机号</th>\
+							<th>状态</th>\
+							<th>交易金额</th>\
+							<th>到期日期</th>\
+							<th>计息日期</th>\
+							<th>利息</th>\
+							<th>转让状态</th>\
+						</tr>\
+					</thead>\
+					<tbody>\
+					<tr>\
+						<td><input type="text" id="id'+i+'"/></td>\
+						<td><input type="text" id="userPhone'+i+'"/></td>\
+						<td><input type="text" id="status'+i+'"/></td>\
+						<td><input type="text" id="dealMoney'+i+'"/></td>\
+						<td><input type="text" id="endTime'+i+'"/></td>\
+						<td><input type="text" id="startTime'+i+'"/></td>\
+						<td><input type="text" id="interest'+i+'"/></td>\
+						<td><input type="text" id="transfer'+i+'"/></td>\
+					</tr>\
+				</tbody>\
+			</table>\
+		</div>';
+	$("#creditorsList").before(str);
+}
+
+function cancel(){
+	var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+	parent.layer.close(index);
+}
+</script>
+</body>
+</html>

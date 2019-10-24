@@ -1,0 +1,397 @@
+<!-- 角色管理，添加角色页面 -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<!-- 引入样式 -->
+
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/axios.min.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<link rel="stylesheet" href="../../css/elementUItheme/button.css">
+<link rel="stylesheet" href="../../css/newstyle.css">
+
+<!-- 引入组件库 -->
+<style>
+    *{
+        margin: 0;
+        padding: 0;
+    }
+    [v-cloak]{
+        opacity: 0;
+    }
+    .formSubmitBox {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .userAddText {
+        text-align: center;
+        margin: 15px 0;
+    }
+
+    .btn {
+        position: relative;
+        left: 20px;
+        top: 5px;
+        cursor: pointer;
+    }
+
+    .text {
+        font-size: 14px;
+    }
+
+    .item {
+        padding: 18px 0;
+    }
+
+    .box-card {
+        width: 400px;
+    }
+
+    .font {
+        font-size: 14px;
+        color: #606266;
+    }
+
+    .form>div {
+        margin-bottom: 10px;
+    }
+    .form-top{
+        margin-top: 20px;
+        padding: 0 20px;
+    }
+    .form-top > div{
+        margin: 10px 0;
+    }
+    .oneMenu .el-checkbox .el-checkbox__label{
+        color: #fff !important;
+    }
+    .oneMenu, .twoMenu, .threeMenu{
+        padding: 0 20px;
+    }
+    .oneMenu {
+        background: #1aa094;
+        height: 40px;
+        line-height: 40px;
+        font-weight: bolder;
+    }
+
+    .twoMenu {
+        background: #F2F2F2;
+        height: 40px;
+        line-height: 40px;
+    }
+
+    .twoMenu>span {
+        margin-left: 45px
+    }
+
+    .threeMenu {
+        height: 100px;
+        /* float: left; */
+        padding-left: 45px
+    }
+
+    .threeMenuBox {
+        height: 40px;
+        line-height: 40px
+    }
+    .buttonarea{
+        text-align: center;
+        margin-bottom: 10px;
+    }
+</style>
+
+<body>
+    <div id="app" v-cloak>
+        <div class="form">
+            <div class="form-top">
+                <p style="font-weight: bolder">添加角色</p>
+                <div>
+                    角色名称： <el-input placeholder="请输入内容" style="width:500px;" v-model="name" clearable></el-input>
+                </div>
+                <div>
+                    角色等级： <el-input placeholder="请输入角色等级" style="width:500px" v-model="level" clearable></el-input>
+                </div>
+                <div>
+                    角色描述： <el-input type="textarea" :rows="3" style="width:500px;vertical-align: top" placeholder="请输入内容" v-model="remark"></el-input>
+                </div>
+                <div>
+                    <span>同步登录APP</span>
+                    <el-checkbox v-model="synchronizationApp">开通此权限创建该角色账号将能同时登录供餐端App和后台管理系统。</el-checkbox>
+                </div>
+            
+
+                <p style="font-weight: bolder; margin-top: 20px;margin-bottom: 10px">权限设置</p>
+            </div>
+                <div v-for="(item, index) in appMenu" :key="index">
+                    <div v-if="synchronizationApp">
+                        <div class="oneMenu"><el-checkbox style="margin-right:5px" v-model="item.state" @change="firstMenuChange(item)">{{item.menuName}}</el-checkbox></div>
+                        <div v-for="(item2) in item.children" :key=item2.id>
+                            <div class="twoMenu">
+                                    <el-checkbox style="margin-right:5px" v-model="item2.state" @change="secondMenuChange(item2,item)">{{item2.menuName}}</el-checkbox>
+                            </div>
+                            <div class="threeMenuBox">
+                                <span v-for="(item3) in item2.operationes" class="threeMenu">
+                                    <el-checkbox style="margin-right:5px" v-model="item3.state" @change="thirdMenuChange(item2,item)">{{item3.btnName}}</el-checkbox>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-for="(item, index) in menuList" :key="item.index">
+                    <div v-if="item.type == 0">
+                        <div class="oneMenu"><el-checkbox style="margin-right:5px" v-model="item.state" @change="firstMenuChange(item)">{{item.menuName}}</el-checkbox></div>
+                        <div class="" v-for="(item2, index) in item.children" :key="item2.id">
+                            <div class="twoMenu">
+                                <el-checkbox style="margin-right: 5px" v-model="item2.state" @change="secondMenuChange(item2,item)">{{item2.menuName}}</el-checkbox>
+                            </div>
+                            <div class="threeMenuBox">
+                                <span v-for="(item3, index) in item2.operationes" :key="item3.id" class="threeMenu">
+                                    <el-checkbox style="margin-right: 5px" v-model="item3.state" @change="thirdMenuChange(item2,item)">{{item3.btnName}}</el-checkbox>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+        <div class="buttonarea">
+            <el-button type="primary" size="medium" @click="sub">确定</el-button>
+            <el-button type="primary" size="medium" plain @click="back">返回</el-button>
+        </div>
+    </div>
+</body>
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            name: "", //角色名
+            remark: "", //角色描述
+            synchronizationApp: false, //同步APP
+            menuList: [], //菜单列表
+            appMenu: [],
+            level:'',
+        },
+        methods: {
+            //一级菜单点击时的变化
+            firstMenuChange(item) {
+                console.log("一级菜单点击",item);
+                if(item.state === true){
+                   for (let i = 0; i < item.children.length; i++) {
+                    item.children[i].state = true;
+                        for (let j = 0; j < item.children[i].operationes.length; j++) {
+                            item.children[i].operationes[j].state = true
+                        }
+                   }
+                } else if (item.state === false){
+                    for (let i = 0; i < item.children.length; i++) {
+                    item.children[i].state = false;
+                        for (let j = 0; j < item.children[i].operationes.length; j++) {
+                            item.children[i].operationes[j].state = false
+                        }
+                   }
+                }
+            },
+            //二级菜单点击变化
+            secondMenuChange(item2,item){
+                console.log("二级菜单点击",item2);
+                console.log("二级菜单点击里的一级菜单",item);
+                if(item2.state === false){
+                        item2.operationes.map((val) => {
+                            val.state = false;
+                        })
+                   }else if(item2.state === true){
+                        item2.operationes.map((val) => {
+                            val.state = true;
+                        })
+                   };
+                let result = item.children.every(this.checkedAll);
+                result === false ? item.state = false : item.state = true;
+            },
+            //三级菜单点击变化
+            thirdMenuChange(item2,item){
+                let result1 = item2.operationes.every(this.checkedAll);             //监测每个三级是否都选中
+                result1 == false ? item2.state = false : item2.state = true;        //如果选中就让二级菜单选中
+                let result2 = item.children.every(this.checkedAll);                 //监测每个二级是否都选中
+                result2 == true ? item.state = true :item.state = false;            //如果选中就让一级菜单选中
+            },
+
+            //全选筛选方法
+            checkedAll(element, index, array){
+                return (element.state === true);
+            },
+
+            back(){
+                window.location.href="./roles.html"
+            },
+
+            sub() {
+                let operationes = [];           //选中的操作
+                let firstMenuData = [];         //一级菜单选中数据
+                let secondMenuData = [];        //二级和三级选中数据
+
+                for (let i = 0; i < this.menuList.length; i++) {
+                  for (let j = 0; j < this.menuList[i].children.length; j++) {
+                      for (let k = 0; k < this.menuList[i].children[j].operationes.length; k++) {
+                         if(this.menuList[i].children[j].operationes[k].state === true){
+                            operationes.push(this.menuList[i].children[j].operationes[k])
+                         }
+                      }
+                  }
+                }
+                for (let i = 0; i < operationes.length; i++) {
+                    let obj1 = {menuId:operationes[i].firstMenuId,operationId:""};
+                    firstMenuData.push(obj1);
+                    let obj2 = {menuId:operationes[i].belongMenu,operationId:operationes[i].id};
+                    secondMenuData.push(obj2)
+                }
+                removeRepeat(firstMenuData,"menuId");
+                secondMenuData=secondMenuData.map((item,index,arr) => {
+                    const i=arr.find(_item=>item.menuId ===_item.menuId);
+                    if(i!==item){
+                        i.operationId.push(item.operationId);
+                        return undefined;
+                    }else{
+                        i.operationId = [i.operationId];
+                        return i;
+                    }
+                }).filter(item=>item!==undefined);
+                
+                secondMenuData.map((val)=>{
+                    val.operationId = val.operationId.join(",")
+                })
+                let result = firstMenuData.concat(secondMenuData);
+                let aa =  {
+                        rolePermission:JSON.stringify(result),
+                        roleName:this.name,
+                        remark:this.remark,
+                        isApp:this.synchronizationApp == true ? 0 : 1,
+                        state:0,
+                        level:this.level,
+                        userId:sessionStorage.ID
+                    }
+                $.ajax({
+                	type: 'post',
+                	url: pageUrl + userPackageName + '/permission/addRole',
+                	data: {
+                        rolePermission:JSON.stringify(result),
+                        roleName:this.name,
+                        remark:this.remark,
+                        isApp:this.synchronizationApp == true ? 0 : 1,
+                        state:0,
+                        level:this.level,
+                        userId:sessionStorage.ID
+                    },  
+                    success:(response) => {
+                        if(response.code === "000000"){
+                            this.$alert('添加成功', '提示', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                                window.location.href = "./roles.html"
+                            }
+                        });
+                        }else{
+                            this.$message.error(response.message);
+                        }
+					},
+                //     axios({
+                //     method: 'post',
+                //     headers:{
+                //         'Content-Type': 'multipart/form-data'
+                //     },
+                //     url: pageUrl + userPackageName + '/permission/addRole',
+                //     data:{
+                //         rolePermission:JSON.stringify(result),
+                //         roleName:this.name,
+                //         remark:this.remark,
+                //         isApp:this.synchronizationApp == true ? 0 : 1,
+                //         state:0,
+                //         level:this.level,
+                //         userId:sessionStorage.ID
+                //     }
+                // })
+                // .then((response) =>  {
+                //         console.log("提交结果",response.data);
+                //         if(response.data.code == "000000"){
+                //             this.$alert('添加成功', '提示', {
+                //             confirmButtonText: '确定',
+                //             callback: action => {
+                //                 window.location.href = "./roles.html"
+                //             }
+                //         });
+                //         }else{
+                //             this.$message.error(response.data.message);
+                //         }
+                	
+                });
+            },
+        },
+        watch: {
+            synchronizationApp(newValue) {          //观察是否选中同步APP
+                if (newValue == false) {
+                    for (let i = 0; i <  this.appMenu.length; i++) {
+                        this.appMenu[i].state = false;
+                        for (let j = 0; j <this. appMenu[i].children.length; j++) {
+                            this.appMenu[i].children[j].state = false;
+                            for (let k = 0; k < this.appMenu[i].children[j].operationes.length; k++) {
+                                this.appMenu[i].children[j].operationes[k].state = false;
+                            }
+                        }
+                   }
+                }
+            },
+           
+        },
+        created() {
+            axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName + "/permission/queryAllMenuList",
+                })
+                .then((response) => {
+                    let data = response.data.data;
+                 
+                    for (let i = 0; i < data.length; i++) {
+                        data[i].state = true;
+                        for (let j = 0; j < data[i].children.length; j++) {
+                            data[i].children[j].state = true;
+                            for (let k = 0; k < data[i].children[j].operationes.length; k++) {
+                                data[i].children[j].operationes[k].firstMenuId = data[i].id;
+                                data[i].children[j].operationes[k].state = true;
+                            }
+                        }
+                    }
+                    console.log("data",data);
+                    this.menuList = data;
+                    let appMenu = data.filter((val) => {
+                        return val.type == 1;
+                    });
+                   for (let i = 0; i <  appMenu.length; i++) {
+                        appMenu[i].state = false;
+                        for (let j = 0; j < appMenu[i].children.length; j++) {
+                            appMenu[i].children[j].state = false;
+                            for (let k = 0; k < appMenu[i].children[j].operationes.length; k++) {
+                                appMenu[i].children[j].operationes[k].state = false;
+                            }
+                        }
+                   }
+                   this.appMenu = appMenu;
+                })
+                .catch(function (error) {
+                    //console.log(error);
+                });
+        },
+    })
+</script>
+</html>

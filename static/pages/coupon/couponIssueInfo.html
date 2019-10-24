@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+</head>
+<!-- 引入样式 -->
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/axios.min.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/common.js"></script>
+<style>
+	[v-cloak] {
+		opacity: 0;
+	}
+
+</style>
+
+<body>
+	<div id="app" v-cloak>
+			<el-table style="width: 100%" :data="tableData" style="width: 100%;margin-bottom: 0.4rem;" border row-key="id">
+				<el-table-column prop="name" align="center" label="名称"></el-table-column>
+				<el-table-column prop="money" align="center" label="金额（元）"></el-table-column>
+				<el-table-column  align="center" width="250" label="投放起始时间">
+					<template slot-scope="scope">
+						<p>开始时间：{{scope.row.putStartTime}}</p>
+						<p>结束时间：{{scope.row.putEndTime}}</p>
+					</template>
+				</el-table-column>
+				<el-table-column prop="putNumber" align="center" label="投放量">
+					<template slot-scope="scope">
+						<p v-if="scope.row.putNumber == 0">不限</p>
+						<p v-else>{{scope.row.putNumber}}</p>
+					</template>
+				</el-table-column>
+				<el-table-column prop="alreadyReceive" align="center" label="已领取"></el-table-column>
+				<el-table-column prop="alreadyUse" align="center" label="已使用"></el-table-column>
+				<el-table-column prop="noUse" align="center" label="领取未使用"></el-table-column>
+				<el-table-column prop="putRestNumber" align="center" label="待领取">
+					<template slot-scope="scope">
+						<p v-if="scope.row.putNumber == 0">不限</p>
+						<p v-else>{{scope.row.putRestNumber}}</p>
+					</template>
+				</el-table-column>
+			</el-table>
+			
+			<el-form :model="form" :inline="true"  label-width="100px" style="display: inline-block;margin-top: 20px">
+				<el-form-item label="状态">
+					<el-select v-model="form.state" clearable placeholder="请选择">
+						<el-option label="未使用" :value="1"></el-option>
+						<el-option label="已使用" :value="2"></el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="手机号码">
+					<el-input v-model="form.phoneNo" clearable></el-input>
+				</el-form-item>
+				<el-form-item>
+					<el-button type="primary" @click="onSubmit">查询</el-button>
+					<el-button type="" @click="back">返回</el-button>
+				</el-form-item>
+			</el-form>
+
+			<el-table style="width: 100%" :data="userTableData" style="width: 100%;margin-bottom: 0.4rem;" border row-key="id">
+				<el-table-column prop="id" align="center" label="优惠券码"></el-table-column>
+				<el-table-column prop="userName" align="center" label="领取会员"></el-table-column>
+				<el-table-column prop="phoneNo" align="center" label="领取人电话"></el-table-column>
+				<!-- <el-table-column prop="couponName" align="center" label="领取人时间"></el-table-column> -->
+				<el-table-column prop="receiveTime" align="center" label="领取时间"></el-table-column>
+				<el-table-column  align="center" label="当前状态">
+					<template slot-scope="scope">
+						<p v-if="scope.row.state == 1">未使用</p>
+						<p v-if="scope.row.state == 2">已使用</p>
+					</template>
+				</el-table-column>
+				<el-table-column prop="usedTime" align="center" label="使用时间"></el-table-column>
+			</el-table>
+			<el-pagination background layout="prev, pager, next" :current-page.sync="form.pageNum" :total="total" @current-change="change"></el-pagination>
+	</div>
+</body>
+<script>
+	new Vue({
+		el: '#app',
+		data(){
+			return{
+				form:{
+					couponPutId:GetRequest().id,
+					phoneNo:"",
+					state:"",
+					pageSize:10,
+					pageNum:1,
+				},
+				total:1,
+				tableData:[],
+				userTableData:[],
+				cityList:[],
+				storeList:[]
+			}
+		},
+		methods: {
+			//获取城市下拉框
+			// getCity(){
+			// 	axios({
+			// 		method: 'get',
+			// 		url: pageUrl + eatPackageName + "/city/city_list",
+					
+			// 	})
+			// 	.then((res) => {
+			// 		this.cityList = res.data.data;
+			// 	})
+			// 	.catch(function (error) {
+			// 		console.log(error);
+			// 	});
+			// },
+
+
+			getTitleTableData(){
+				axios({
+					method: 'get',
+					url: pageUrl + couponPackageName + "/coupon/putStatisticData",
+					params:{id:GetRequest().id}
+				})
+				.then((res) => {
+					console.log(res.data.data);
+					this.tableData = [res.data.data];
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+			getTableData(){
+				axios({
+					method: 'get',
+					url: pageUrl + couponPackageName + "/coupon/findUserCouponPage",
+					params:this.form
+				})
+				.then((res) => {
+					console.log(res);
+					this.total = res.data.total;
+					this.userTableData = res.data.data;
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			},
+
+			onSubmit(){
+				this.getTableData();
+			},
+			change(e){
+				this.form.pageNum = e;
+				this.getTableData();
+			},
+			back(){
+				location.href="./couponIssueList.html"
+			}
+		},
+		created() {
+			// console.log(GetRequest());
+			this.getTitleTableData();
+			this.getTableData()
+			// this.getCity()
+		},
+	})
+</script>
+
+</html>

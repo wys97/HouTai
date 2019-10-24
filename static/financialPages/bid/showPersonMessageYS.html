@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<fieldset>
+			<br/>
+				<div id="all">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">借款人:</label>
+						<div class="col-sm-10" style="width:30%">
+							<span class="form-control" id="enterpriseName"></span>
+						</div>
+						<label class="col-sm-2 control-label">借款人手机号码:</label>
+						<div class="col-sm-10" style="width:30%">
+							<span class="form-control" id="businessPhone"></span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">所属行业:</label>
+						<div class="col-sm-10" style="width:30%">
+							<span class="form-control" id="industry"></span>
+						</div>
+						<label class="col-sm-2 control-label">收入情况:</label>
+						<div class="col-sm-10" style="width:30%">
+							<span class="form-control" id="annualIncome"></span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">负债情况:</label>
+						<div class="col-sm-10" style="width:30%">
+							<span class="form-control" id="isLiabilities"></span>
+						</div>
+						<label class="col-sm-2 control-label">征信逾期(6月内):</label>
+						<div class="col-sm-10" style="width:30%">
+							<span class="form-control" id="creditOverdue"></span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">借款用途:</label>
+						<div class="col-sm-10" style="width:77%">
+							<span class="form-control" id="borrowMoneyUse"></span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">担保机构:</label>
+						<div class="col-sm-10" style="width:77%">
+							<span class="form-control" id="guaranteeCompanyName"></span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">担保函:</label>
+						<div class="col-sm-10">
+							<div id="suretyBond"></div>
+							<div id="suretyBondSpan" style="margin-top:10px;margin-right:10px;color:red" >
+								<span>该用户未上传该项资质</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" onclick="cancel()">关闭</button>
+						</div>
+					</div>
+				</div>
+				<br/>
+			</fieldset>
+		</form>
+	</div>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript" src="../../js/dateUtil.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+layui.use(['form','layer'], function(){
+	var layer = layui.layer;
+	
+	var form=layui.form;
+	form.render('select');
+	
+	initData();
+});
+
+function initData(){
+	var bidId=getUrlParam("bidId");
+	
+	$.ajax({
+		type : 'get',
+		url : domainName + '/api-P2P/qftEnterprises/info',
+		data: {bidId:bidId},
+		success : function(data) {
+			if(data!=null){
+				var qftEnterprise = data.qftEnterprise;
+				if(qftEnterprise != undefined){
+					$("#all").show();
+					$("#enterpriseName").html(qftEnterprise.enterpriseName);
+					$("#businessPhone").html(qftEnterprise.businessPhone);
+					$("#industry").html(qftEnterprise.industry);
+					$("#annualIncome").html(qftEnterprise.annualIncome);
+					$("#isLiabilities").html(qftEnterprise.isLiabilities);
+					$("#creditOverdue").html(qftEnterprise.creditOverdue);
+					$("#borrowMoneyUse").html(qftEnterprise.borrowMoneyUse);
+					$("#guaranteeCompanyName").html(qftEnterprise.guaranteeCompanyName);
+					var suretyBond = qftEnterprise.suretyBond;
+					
+					if(suretyBond != "" && suretyBond != null){
+						$("#suretyBond").show();
+						$("#suretyBondSpan").hide();
+						var $img="<img style='margin-top:10px;margin-right:10px;' width='25%' height='25%' src="+suretyBond+" />";
+						$("#suretyBond").append($img);
+					}else{
+						$("#suretyBond").hide();
+						$("#suretyBondSpan").show();
+					}
+				}else{
+					$("#all").hide();
+				}
+			}
+		}
+	});
+}
+
+function cancel(){
+	var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+	parent.layer.close(index);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>layui</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="../../layui/css/layui.css"  media="all">
+  <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+  
+<style type="text/css">
+.layui-field-title {
+    margin: 10px 0 20px;
+    border-width: 0px 0 0;
+}
+</style>
+</head>
+<body>
+    <fieldset class="layui-elem-field" style="margin-left: 50px;margin-top: 15px;margin-right: 50px;border-width: 0px;">  
+    	   <form class="layui-form" action="">
+			  	<fieldset class="layui-elem-field">
+				  <legend>筛选查询</legend>
+				  
+				    <div class="layui-form-item">
+					    <div class="layui-inline">
+					      <label class="layui-form-label">活动类型:</label>
+					      <div class="layui-input-inline">
+					        <select name="type" id="type" lay-search="">
+					          <option value="">直接选择或搜索选择</option>
+					          <option value="001">油卡</option>
+					          <option value="002">饭卡</option>
+					          <option value="003">租车卡</option>
+					        </select>
+					      </div>
+					    </div>
+					    <div id="idDiv" class="layui-inline">
+					      <label class="layui-form-label">活动名称:</label>
+					      <div class="layui-input-inline">
+					        <input class="layui-input" name="title" id="title" autocomplete="off">
+					      </div>
+					      <button type="button" class="layui-btn" data-type="reload">搜索</button>
+					    </div>
+					  </div>
+					  
+					  
+				</fieldset>
+			</form>
+	  	<table class="layui-hide" id="test" lay-filter="test"></table>
+  	</fieldset>
+
+ <script type="text/html" id="textInput">
+	<input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="输入份数" class="layui-input">
+</script>
+ 
+ <script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+    <input type="button" class="layui-btn layui-btn-sm" value="添加司卡" onclick="toDetails()" lay-event="getCheckData"/>
+  </div>
+</script>
+
+<script type="text/html" id="barDemo">
+  <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="detail">查看</a>
+  <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+{{#  if(d.statusName === '下架'){ }}
+  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="up">上架</a>
+{{#  } else { }}
+  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="down">下架</a>
+{{#  } }}
+</script>
+
+<script type="text/html" id="statusNameTpl">
+  {{#  if(d.statusName === '上架'){ }}
+    <span style="color: #F581B1;">{{ d.statusName }}</span>
+  {{#  } else { }}
+    {{ d.statusName }}
+  {{#  } }}
+</script>
+
+<script src="../../layui/layui.js" charset="utf-8"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script>
+
+layui.use(['form', 'layedit', 'laydate'], function(){
+	  var form = layui.form
+	  ,layer = layui.layer
+	  ,layedit = layui.layedit
+	  ,laydate = layui.laydate;
+	  var table = layui.table;
+	
+});
+
+layui.use('table', function(){
+	  var table = layui.table;
+	  
+	  table.render({
+	    elem: '#test'
+	    ,url:pageUrl+shihuiPackageName+'/skManager/getShTypeInfoAll'
+	    ,toolbar: '#toolbarDemo'
+	    ,title: '用户数据表'
+    	,width: 1615
+	    ,cols: [[
+	    	{type:'numbers'}
+	      ,{field:'id', width:80, title: '司卡ID', sort: true}
+	      ,{field:'name', width:150, title: '司卡名称'}
+	      ,{field:'typeName', width:100, title: '司卡类型', sort: true}
+	      ,{field:'createTimeStr', width:200, title: '发卡日期'}
+	      ,{field:'timeStr', width:200, title: '有效期'}
+	      ,{field:'statusName', width:100, title: '状态',templet: '#statusNameTpl'}
+	      ,{field:'realityAmount', width:100, title: '剩余库存'}
+	      ,{fixed: 'right', title:'操作',  toolbar: '#barDemo'}
+	    ]]
+	    ,id: 'benefitsReload'
+	    ,page: true
+	  });
+	  
+	//监听行工具事件
+	  table.on('tool(test)', function(obj){
+	    var data = obj.data;
+	    console.log(obj)
+	      if(obj.event === 'detail'){
+	    	  //window.location.href=pageUrl+backendPackageName+"/pages/skmanager/selectShTypeInfoDetails.html?id="+data.id;
+	    	  window.location="selectShTypeInfoDetails.html?id="+data.id;
+	      }else if(obj.event === 'up'){
+		      layer.confirm('需要上架此司卡吗？', function(index){
+		        obj.del();
+		        $.ajax({
+		        	type:'post',
+		        	url: pageUrl+shihuiPackageName+'/skManager/updateSkManagerState?id='+data.id+'&status=1',
+		        	data:"",
+		        	success:function(data2){
+		        		if (data2.status) {
+		        			layer.msg(data2.info, {time: 2000});
+		        			$('#idDiv .layui-btn').click();
+		        			 layer.close(index);
+						} else {
+							layer.msg("网络错误", {time: 2000});
+						}
+		        	}
+		        });
+		       
+		        //layer.close(index);
+		      });
+		    }else if(obj.event === 'down'){
+		      layer.confirm('需要下架此司卡吗？', function(index){
+		        obj.del();
+		        $.ajax({
+		        	type:'post',
+		        	url: pageUrl+shihuiPackageName+'/skManager/updateSkManagerState?id='+data.id+'&status=0',
+		        	data:"",
+		        	success:function(data2){
+		        		if (data2.status) {
+		        			layer.msg(data2.info, {time: 2000});
+		        			$('#idDiv .layui-btn').click();
+		        			layer.close(index);
+						} else {
+							layer.msg("网络错误", {time: 2000});
+						}
+		        	}
+		        });
+		        
+		        //layer.close(index);
+		      });
+		    } else if(obj.event === 'edit'){
+	    	  layer.prompt({
+	            formType: 2
+	            ,value: "0"
+	            ,title: "需要新增库存数量:"
+	          }, function(value, index){
+	        	if(!isIntNum(value)||parseInt(value)<=0){
+	        		layer.msg("新增数量只能为正整数！", {time: 2000});
+	        		layer.close(index);
+	        		return;
+	        	}
+	        	
+	        	$.ajax({
+		        	type:'post',
+		        	url: pageUrl+shihuiPackageName+'/skManager/updateSkManager?id='+data.id+"&initialamount="+value,
+		        	data:"",
+		        	success:function(data2){
+		        		if (data2.status) {
+		        			layer.msg(data2.info, {time: 2000});
+		        			if(data2.status=="success"){
+		        				value = parseInt(value) + parseInt(data.realityAmount);	        	  
+		        	            obj.update({
+		        	              realityAmount: value
+		        	            });
+		        			}
+		        			layer.close(index);
+						} else {
+							layer.msg("网络错误", {time: 2000});
+						}
+		        	}
+		        });
+	            
+	          });
+	    }
+	  });
+	
+	  
+	  var $ = layui.$, active = {
+	    reload: function(){
+	      var title = $('#title');
+	      var type = $('#type');
+	      
+	      //执行重载
+	      table.reload('benefitsReload', {
+      	    url:pageUrl+shihuiPackageName+'/skManager/getShTypeInfoAll'
+	        ,page: {
+	          curr: 1 //重新从第 1 页开始
+	        }
+	        ,where: {
+	        	name:title.val(),
+	        	type:type.val()
+	        }
+	      });
+	    }
+	  };
+	  
+	  $('#idDiv .layui-btn').on('click', function(){
+		    var type = $(this).data('type');
+		    console.log(type);
+		    active[type] ? active[type].call(this) : '';
+		  });
+	  
+});
+
+function toDetails(){
+    //window.location.href=pageUrl+backendPackageName+"/pages/skmanager/insertShTypeInfo.html";
+    window.location="insertShTypeInfo.html";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<input type="hidden" id="bannerId" name="bannerId">
+			<input type="hidden" id="turnLinkType" name="turnLinkType">
+			<input type="hidden" id="type" name="type">
+			<fieldset>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">标题:</label>
+					<div class="col-sm-10" style="width:70%">
+						<input class="form-control" type="text" name="title" id="title"
+						data-bv-notempty="true"
+						data-bv-notempty-message="标题 不能为空">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">图片URL:</label>
+					<div class="col-sm-10" style="width:70%">
+						<input class="form-control" placeholder="图片URL" type="text" name="imgUrl" id="imgUrl" readonly>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label"></label>
+					<div class="col-md-8">
+						<button type="button" class="layui-btn" id="test1">
+	                        <i class="layui-icon">&#xe67c;</i>上传图片
+	                    </button>
+	                    <input value="ALIYUN" type="hidden" id="fileSource">
+	                </div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-sm-10">
+						<img id="imgShow" style="margin-top:10px;margin-right:10px;" width="30%" height="30%" onclick='openImg(this)' />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">跳转链接:</label>
+					<div class="col-sm-10 layui-form" style="width:15%">
+						<select id="turnLinkTypeSelect" lay-filter="test">
+							<option value="0">无链接</option>
+                        	<option value="1">站外域名</option>
+                           	<option value="2">新手标</option>
+                           	<option value="3">产权质押标</option>
+                           	<option value="4">应收款融资标</option>
+                           	<option value="5">债券转让</option>
+                           	<option value="6">平台介绍</option>
+                        </select>
+					</div>
+				</div>
+				<div class="form-group" id="turnUrlDiv" style="display:none">
+					<label class="col-sm-2 control-label">跳转路径:</label>
+					<div class="col-sm-10" style="width:70%">
+						<input class="form-control" type="text" name="turnUrl" id="turnUrl"
+						data-bv-notempty="true"
+						data-bv-notempty-message="跳转路径 不能为空">
+					</div>
+				</div>
+				<div class="form-group" id="turnIdDiv" style="display:none">
+					<label class="col-sm-2 control-label">跳转Id:</label>
+					<div class="col-sm-10" style="width:70%">
+						<input class="form-control" type="text" name="turnId" id="turnId"
+						data-bv-notempty="true"
+						data-bv-notempty-message="跳转Id 不能为空">
+					</div>
+				</div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" onclick="location.href='bannerList.html'">返回</button>
+							<button class="btn btn-primary" type="submit" onclick="add()" id="save">
+								<i class="fa fa-save"></i> 保存
+							</button>
+							<button class="btn btn-primary" type="submit" onclick="updateB()" id="update">
+								<i class="fa fa-save"></i> 修改
+							</button>
+						</div>
+					</div>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+var layedit;
+var index;
+var layer;
+var form;
+layui.use(['form','upload','layedit','layer'], function(){
+	
+	form=layui.form;
+	
+	//监听select事件
+	form.on('select(test)', function(data){
+		if(data.value==0){
+			$("#turnUrlDiv").hide();
+			$("#turnIdDiv").hide();
+			$("#turnUrl").val("");
+			$("#turnId").val("");
+		}else if(data.value==1){
+			$("#turnUrlDiv").show();
+			$("#turnIdDiv").hide();
+			$("#turnId").val("");
+		}else if(data.value==2||data.value==3||data.value==4||data.value==5){
+			$("#turnUrlDiv").hide();
+			$("#turnIdDiv").show();
+			$("#turnUrl").val("");
+			$("#turnId").val("");
+		}else if(data.value==6){
+			$("#turnUrlDiv").hide();
+			$("#turnIdDiv").hide();
+			$("#turnUrl").val("");
+			$("#turnId").val("");
+		}
+	});
+	
+	form.render('select');
+	
+	var upload = layui.upload;
+	
+	upload.render({
+	    elem: '#test1', //绑定元素
+	    accept: 'images', //允许上传的文件类型
+	    url: domainName + '/zuul/api-f/files?fileSource=' + $("#fileSource").val(),
+	    done: function(res, index, upload){
+	    	$("#imgUrl").val(res.url);
+	    	$("#imgShow").attr('src',res.url);
+	    	layer.msg("上传成功");
+	    }
+	  });
+	
+	 layedit = layui.layedit;
+	  
+	  //配置图片上传
+	  layedit.set({
+		  uploadImage: {
+			  url: domainName + '/zuul/api-f/files/layui?fileSource=' + $("#fileSource").val(), //接口url
+			  type: 'post'
+		  }
+	  });
+	  
+	  index=layedit.build('content'); //建立编辑器
+	  initData();
+	  
+	  layer = layui.layer;
+});
+
+function initData(){
+	var bannerId=getUrlParam("bannerId");
+	var sign=getUrlParam("sign");
+	//添加
+	if(sign==null||sign==""){
+		$("#save").show();
+		$("#update").hide();
+	}else{//编辑
+		$("#save").hide();
+		$("#update").show();
+		
+		//获取详细信息
+		$.ajax({
+			type : 'get',
+			url : domainName + '/api-system/banner/queryOne/'+bannerId,
+			success : function(data) {
+				if(data!=null){
+					$("#bannerId").val(data.bannerId);
+					$("#title").val(data.title);
+					$("#imgUrl").val(data.imgUrl);
+					$("#imgShow").attr('src',data.imgUrl);
+					var turnLinkType=data.turnLinkType;
+					if(turnLinkType==0||turnLinkType==6){
+						$("#turnLinkTypeSelect").val(turnLinkType);
+						form.render(); 
+						$("#turnUrlDiv").hide();
+						$("#turnIdDiv").hide();
+						$("#turnUrl").val("");
+						$("#turnId").val("");
+					}else if(turnLinkType==1){
+						$("#turnLinkTypeSelect").val(turnLinkType);
+						form.render(); 
+						$("#turnUrlDiv").show();
+						$("#turnIdDiv").hide();
+						$("#turnUrl").val(data.turnUrl);
+						$("#turnId").val("");
+					}else if(turnLinkType==2||turnLinkType==3||turnLinkType==4||turnLinkType==5){
+						$("#turnLinkTypeSelect").val(turnLinkType);
+						form.render(); 
+						$("#turnUrlDiv").hide();
+						$("#turnIdDiv").show();
+						$("#turnUrl").val("");
+						$("#turnId").val(data.turnId);
+					}
+				}
+			}
+		});
+	}
+}
+
+function add(){
+    var select=$("#turnLinkTypeSelect").val();
+    $("#turnLinkType").val(select);
+    
+    var turnId = $("#turnId").val();
+    var turnUrl = domainP2PName;
+    
+   	//先判断id是否存在
+   	if(select == 2 || select == 3 || select == 4){
+   		var num = getBid(turnId);
+   		if(num == 0){
+   			layer.msg("该标不存在，请重新输入跳转id!");
+   			return;
+   		}
+   	}
+   	
+	if(select == 5){
+   		var num = getBidCreditors(turnId);
+   		if(num == 0){
+   			layer.msg("该债权不存在，请重新输入跳转id!");
+   			return;
+   		}
+   	}
+   	
+   	if(select == 2){
+   		turnUrl += "/noviceInvestment?id="+turnId;
+   		$("#turnUrl").val(turnUrl);
+   		
+   	}
+   	
+   	if(select == 3){
+   		turnUrl += "/investment?id="+turnId+"&type=2";
+   		$("#turnUrl").val(turnUrl);
+   	}
+   	
+	if(select == 4){
+   		turnUrl += "/investment?id="+turnId+"&type=3";
+   		$("#turnUrl").val(turnUrl);
+   	}
+	
+	if(select == 5){
+		turnUrl += "/bondTransfer?id="+turnId;
+   		$("#turnUrl").val(turnUrl);
+   	}
+	
+	if(select == 6){
+   		turnUrl += "/introduction";
+   		$("#turnUrl").val(turnUrl);
+   	}
+   	
+   	$('#form').bootstrapValidator();
+	//定义一个校验器
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	//执行校验
+	bootstrapValidator.validate();
+	//判断校验结果
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+    
+    $("#type").val("2");
+    var formdata = $("#form").serializeObject();
+
+    $.ajax({
+		type : 'post',
+		url : domainName + '/api-system/banner',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(formdata),
+		success : function(data) {
+			layer.msg("成功", {shift: -1, time: 1000}, function(){
+                location.href = "bannerList.html";
+            });
+		}
+	});
+}
+
+function getBid(id){
+	var result = 0;
+	$.ajax({
+		type : 'get',
+		url : domainName + '/api-P2P/bids/countForId',
+		contentType: "application/json; charset=utf-8",  
+		data : {id:id},
+		async: false,
+		success : function(data) {
+			result = data;
+		}
+	});
+	return result;
+}
+
+function getBidCreditors(id){
+	var result = 0;
+	$.ajax({
+		type : 'get',
+		url : domainName + '/api-P2P/bidCreditors/countForId',
+		contentType: "application/json; charset=utf-8",  
+		data : {id:id},
+		async: false,
+		success : function(data) {
+			result = data;
+		}
+	});
+	return result;
+}
+
+function updateB(){
+	var select=$("#turnLinkTypeSelect").val();
+    $("#turnLinkType").val(select);
+    
+    var turnId = $("#turnId").val();
+    var turnUrl = domainP2PName;
+    
+   	//先判断id是否存在
+   	if(select == 2 || select == 3 || select == 4){
+   		var num = getBid(turnId);
+   		if(num == 0){
+   			layer.msg("该标不存在，请重新输入跳转id!");
+   			return;
+   		}
+   	}
+   	
+	if(select == 5){
+   		var num = getBidCreditors(turnId);
+   		if(num == 0){
+   			layer.msg("该债权不存在，请重新输入跳转id!");
+   			return;
+   		}
+   	}
+   	
+   	if(select == 2){
+   		turnUrl += "/noviceInvestment?id="+turnId;
+   		$("#turnUrl").val(turnUrl);
+   		
+   	}
+   	
+   	if(select == 3){
+   		turnUrl += "/investment?id="+turnId+"&type=2";
+   		$("#turnUrl").val(turnUrl);
+   	}
+   	
+	if(select == 4){
+   		turnUrl += "/investment?id="+turnId+"&type=3";
+   		$("#turnUrl").val(turnUrl);
+   	}
+	
+	if(select == 5){
+		turnUrl += "/bondTransfer?id="+turnId;
+   		$("#turnUrl").val(turnUrl);
+   	}
+	
+	if(select == 6){
+   		turnUrl += "/introduction";
+   		$("#turnUrl").val(turnUrl);
+   	}
+	
+	$('#form').bootstrapValidator();
+	//定义一个校验器
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	//执行校验
+	bootstrapValidator.validate();
+	//判断校验结果
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+	
+    var formdata = $("#form").serializeObject();
+    console.log(formdata);
+    
+    $.ajax({
+		type : 'put',
+		url : domainName + '/api-system/banner',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(formdata),
+		success : function(data) {
+			layer.msg("成功", {shift: -1, time: 1000}, function(){
+                location.href = "bannerList.html";
+            });
+		}
+	});
+}
+function openImg(imgUrl){
+	var img = "<img src='" + imgUrl.src + "' width='800' height='600'/>";
+	layer.open({
+	  type: 1,
+	  title: false,
+	  closeBtn: 0,
+	  area:['800px','600px'], 
+	  skin: 'layui-layer-nobg', //没有背景色
+	  shadeClose: true,
+	  content: img
+	});
+}
+</script>
+</body>
+</html>

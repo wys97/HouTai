@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+	<script type="text/javascript" src="../../layui/layui.js"></script>
+	<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+</head>
+<body id="app">
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<fieldset>
+				<div class="form-group">
+					<label class="col-md-8">内容标题：{{articleInfoData.title}}</label>
+				</div>
+				<div class="form-group" id="dataSource">
+					<label class="col-md-8">内容来源：{{articleInfoData.dataSource}}</label>
+				</div>
+				<div class="form-group">
+					<label class="col-md-8">内容分类：{{articleInfoData.sourceType|sourceTypeFilter}}</label>
+				</div>
+				<div class="form-group">
+					<label class="col-md-8">所属栏目：{{articleInfoData.moduleType}}</label>
+				</div>
+				<div class="form-group">
+					<label class="col-md-8">发布时间：{{articleInfoData.createTime}}</label>
+				</div>
+				<!-- 图文 -->
+				<div id="imagesTextDiv" >
+					<div class="form-group">
+						<label class="col-md-8">资讯内容：</label>
+						<div class="col-md-8">
+							<div id = "contentShow" ></div>
+							<!-- <textarea class="layui-textarea layui-hide" id="content" contenteditable="false" disabled="disabled">{{articleInfoData.content}}</textarea> -->
+						</div>
+					</div>
+				</div>
+				<!-- 图集 -->
+				<div id="imagesDiv" style="display:none;">
+					<div class="form-group">
+						<label class="col-md-8">图集预览区： </label>
+						<div class="col-md-8" id="imagesDivSource"></div>
+					</div>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+<input type="hidden" id="id" value="{{idVue}}"/>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript">
+	var id = getUrlParam("id");
+	var commentNum = getUrlParam("commentNum");
+	var app = new Vue({
+		el : '#app',
+		data : {
+			articleInfoData : {}
+			,idVue : id
+		},
+		created : function () {
+			this.updatePageInput();
+		},
+		methods:{
+			updatePageInput(){
+				$.ajax({
+				    type:'GET',
+				    url: pageUrl + appPackageName + '/discoverInfo/backendView?id=' + id,
+				    data: id,
+				    success:function(obj){
+				    	app.articleInfoData = obj;
+				    	var sourceType = obj.sourceType;
+				    	var pictSource = '';
+				    	if(sourceType != null && sourceType == 4){//图集类,隐藏资讯内容
+				    		$("#imagesTextDiv").hide();
+				    		$("#imagesDiv").show();
+				    		//添加图集图片和图集描述
+				    		var pictInfoList = obj.pictRelateList;
+				    		if(pictInfoList != null && pictInfoList.length > 0){
+				    			for(var i = 0; i < pictInfoList.length; i++){
+				    				pictSource += '<img src="' + pictInfoList[i].fullPath + '"' + "/>" + "<br/>";
+				    				pictSource += pictInfoList[i].content + "<br/>";
+					    		}
+				    		}
+				    		$("#imagesDivSource").append(pictSource);
+				    	}
+				    	if(obj.dataSource == null){
+				    		$("#dataSource").hide();
+				    	}
+				    	$("#contentShow").append(obj.content);
+				    	
+				    /* 	if(commentNum > 0){
+				    		$("#showCommentHtml").append('<iframe src="theDiscoverCommentList.html" id="mainiframe"  width="100%" height="600" frameborder="0" scrolling="auto"/>');
+				    	} */
+				    }
+				});
+			},
+		}
+	});
+
+	layui.use([ 'form', 'layedit' ], function() {
+		var form = layui.form, layer = layui.layer, layedit = layui.layedit;
+		layedit.build('content',{
+			height: 180, //设置编辑器高度
+			contenteditable: false
+		}); //建立编辑器
+	});
+	
+	//自动调整iframe长宽
+	function changeFrameHeight(){
+	    var ifm= document.getElementById("mainiframe");
+	    ifm.height=document.documentElement.clientHeight-56;//56是头顶的高度，和网友估计不一样。
+	}
+	window.onresize=function(){changeFrameHeight();}
+	//自动加载相当于onload事件
+	$(function(){changeFrameHeight();});
+	
+</script>
+<!-- <iframe src="theDiscoverCommentList.html" frameborder="0" width="300" scrolling="No" height="200" leftmargin="0" topmargin="0"></iframe> -->
+<div id="showCommentHtml">
+<iframe src="theDiscoverCommentList.html" id="mainiframe"  width="100%" height="600" frameborder="0" scrolling="auto"/>
+</div>
+</body>
+</html>
+<script type="text/javascript">
+$("#content").next().find('iframe').contents().find('body').prop("contenteditable",false);
+</script>

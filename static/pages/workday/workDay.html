@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<!-- 引入样式 -->
+<link rel="stylesheet" href="../../css/elementUI.css">
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/axios.min.js"></script>
+<script src="../../js/common.js"></script>
+<style>
+    [v-cloak] {
+        opacity: 0;
+    }
+
+    .formSubmitBox {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .el-table__row--level-1 {
+        background-color: oldlace !important;
+    }
+
+    .font {
+        font-size: 0.28rem;
+        color: #606266;
+    }
+
+    .btn {
+        position: relative;
+        left: 0.2rem;
+        top: 0.1rem;
+        cursor: pointer;
+    }
+    .box-card {
+    width: 480px;
+  }
+</style>
+
+<body>
+    <div id="app" v-cloak>
+        <!-- <p>新增城市</p> -->
+             <el-form :inline="true" :model="form" class="demo-form-inline">
+                <el-form-item label="时间">
+                        <el-date-picker clearable value-format="yyyy-MM-dd" :picker-options="pickerOptions0" v-model="form.time" type="date" placeholder="选择日期"></el-date-picker>
+                </el-form-item>
+                <el-form-item label="是否工作日">
+                  <el-select clearable v-model="form.isWork" placeholder="请选择配置状态">
+                        <el-option label="非工作日" value="0"></el-option>
+                        <el-option label="工作日" value="1"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="onSubmit">查询</el-button>
+                </el-form-item>
+              </el-form>
+        <el-table style="width: 100%" :data="workDatData" border row-key="id">
+            <el-table-column prop="id" label="编号" align="center"></el-table-column>
+            <el-table-column prop="form.is_work" label="是否工作日" align="center">
+                <template slot-scope="scope">
+                    <div v-if="scope.row.is_work == 0">非工作日</div>
+                    <div v-else-if="scope.row.is_work == 1">工作日</div>
+                </template>
+            </el-table-column>
+            <el-table-column prop="dateseq" label="日期" align="center"></el-table-column>
+            <el-table-column prop="" label="操作" align="center">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="edit(scope.row)">编辑</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination background layout="prev, pager, next,sizes" :total="total" :page-sizes="[10, 20, 30, 40, 50]"  @size-change="changeSize" @current-change="change"></el-pagination> 
+
+        <el-dialog title="提示" :visible.sync="dialogVisible" width="30%" >
+            <div>
+                日期：{{detailData.dateseq}}
+                <el-select v-model="detailData.is_work" placeholder="请选择">
+                    <el-option :key="0" label="非工作日" :value="0"></el-option>
+                    <el-option :key="1" label="工作日" :value="1"></el-option>
+                </el-select>
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="sub">确 定</el-button>
+            </span>
+        </el-dialog>
+
+
+
+    </div>
+</body>
+<script>
+    new Vue({
+        el: '#app',
+        data(){
+          return{
+            dialogVisible: false,
+            detailData:{},
+            workDatData:[],
+            form:{
+                pageIndex:1,
+                pageSize:10,
+              time:"",
+                isWork:""
+            },
+            total:1,
+            pickerOptions0: {
+                disabledDate(time) {
+                    return time.getTime() < Date.now() - 8.64e7;
+                }
+            },
+          }
+        },
+        methods: {
+            //获取工作日管理表格数据
+            getWorkDayData(){
+                axios({ 
+                    method: 'get',
+                    url: pageUrl + backendPackageName + "/calendar/queryList",
+                    params:this.form
+                })
+                .then((res) => {
+                   this.workDatData = res.data.data.rows;
+                   this.total = res.data.data.total;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+
+            edit(e){
+                this.dialogVisible = true;
+                this.detailData = Object.assign({},e)
+            },
+
+            change(e){
+                this.form.pageIndex = e;
+                this.getWorkDayData()
+            },
+            changeSize(e){
+                console.log(e)
+                this.form.pageSize = e;
+                this.getWorkDayData()
+            },
+            sub(){
+                console.log(this.detailData);
+                axios({ 
+                    method: 'post',
+                    url: pageUrl + backendPackageName + "/calendar/changeIsWork",
+                    params:{
+                        id:this.detailData.id,
+                        is_work:this.detailData.is_work
+                    }
+                })
+                .then((res) => {
+                    console.log(res);
+                    if(res.data.code === "000000")
+                    {
+                        this.$message.success("修改成功");
+                        this.getWorkDayData();
+                        this.dialogVisible = false;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+
+            //查询按钮
+            onSubmit(){
+                this.getWorkDayData()
+            }
+        },
+        created() {
+            this.getWorkDayData()
+        },
+    })
+</script>
+
+</html>

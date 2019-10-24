@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<fieldset>
+			<span style="font-weight:bold;">基本信息</span>
+			<hr class="layui-bg-green"></hr>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">最小投资金额(元):</label>
+					<div class="col-sm-10" style="width:20%">
+						<input class="form-control" type="text" name="minMoney" id="minMoney" readonly>
+					</div>
+					<label class="col-sm-2 control-label">最大投资金额(元):</label>
+					<div class="col-sm-10" style="width:20%">
+						<input class="form-control" type="text" name="maxMoney" id="maxMoney" readonly>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">参与要求:</label>
+					<div class="col-sm-8">
+						<textarea class="form-control" name="joinCondition" id="joinCondition" readonly></textarea>
+					</div>
+				</div>
+				<span style="font-weight:bold;">设置</span>
+				<hr class="layui-bg-green"></hr>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">借款天数(元):</label>
+					<div class="col-sm-8" style="width: 13%;">
+						<input type="hidden" id="repaymentDay"  name="repaymentDay">	
+						<select class="form-control input-sm" id="repaymentDayId" >
+							<option value="-1">请选择...</option>
+						</select>
+					</div>
+					<input id="rateYear" name="rateYear" type="hidden">
+					<div id="rateYearDiv">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">总金额(元):</label>
+					<div class="col-sm-8">
+					<input class="form-control" placeholder="总金额" type="text" name="money" id="money"
+					    data-bv-notempty="true"
+						data-bv-notempty-message="总金额不能为空">
+					</div>
+				</div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" onclick="cancel()">取消</button>
+							<button class="btn btn-primary" type="submit" onclick="addBid()" id="save">
+								<i class="fa fa-save"></i> 保存
+							</button>
+						</div>
+					</div>
+				</div>
+				<br/>
+			</fieldset>
+		</form>
+	</div>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript" src="../../js/dateUtil.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+layui.use(['form','layer'], function(){
+	var layer = layui.layer;
+	
+	var form=layui.form;
+	form.render('select');
+	
+	initData();
+});
+
+function initData(){
+	
+	var sign=getUrlParam("sign");
+	if(sign == "add"){
+		
+		//获取新手标配置信息
+		$.ajax({
+			type : 'get',
+			url : domainName + '/api-P2P/pfBidTypeSettings/queryNewBidTypeSettingDetail',
+			success : function(data) {
+				if(data!=null){
+					var bid = data.bid;
+					if(bid != undefined){
+						$("#minMoney").val(bid.minMoney);
+						$("#maxMoney").val(bid.maxMoney);
+						$("#joinCondition").val(bid.joinCondition);
+					}
+					
+					var dayToRate = data.dayToRate;
+					if(dayToRate != undefined){
+						var opt = "";
+						for(var i=0;i<dayToRate.length;i++){
+							 opt += '<option value="'+dayToRate[i].repaymenDay+'" id="re'+i+'">'+dayToRate[i].repaymenDay+'</option>' ;
+							 var str = '<input type="hidden" id="rateYear'+i+'" value="'+dayToRate[i].rateYear+'"/>';
+							 $("#rateYearDiv").before(str);
+						}
+						$("#repaymentDayId").html(opt);
+					}
+				}
+			}
+		}); 
+	}
+}
+
+function addBid(){
+	$('#form').bootstrapValidator();
+	
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	bootstrapValidator.validate();
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+    
+    var select=$("#repaymentDayId").val();
+    if(select == "-1"){
+    	layer.msg("请先进行借款标设置!");
+		return;
+    }
+    
+    var num = $("select option:checked").attr("id").split("re")[1];
+    
+    var reteYear = $("#rateYear"+num).val();
+    $("#rateYear").val(reteYear);
+    
+   	$("#repaymentDay").val(select); 
+    var formdata = $("#form").serializeObject();
+    
+   	$.ajax({
+		type : 'post',
+		url : domainName + '/api-P2P/bids',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(formdata),
+		success : function(data) {
+			layer.msg("成功", {shift: -1, time: 1000}, function(){
+				var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+				parent.layer.close(index);
+				parent.example.ajax.reload();
+            });
+		}
+	});
+}
+
+function cancel(){
+	var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+	parent.layer.close(index);
+}
+</script>
+</body>
+</html>

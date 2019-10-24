@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<input type="hidden" id="id" name="id">
+			<input value="ALIYUN" type="hidden" id="fileSource">
+			<fieldset>
+				<div id="addDiv">
+					<div class="form-group">
+						<label class="col-md-2 control-label">平台说明类型:</label>
+						<div class="col-md-10 layui-form" style="width:25%">
+							<input type="hidden" id="type" name="type"> 
+							<select id="typeSelect" lay-filter="test">
+								<option value=1>风险提示</option>
+	                        	<option value=2>安全保障</option>
+	                        	<option value=3>担保函模板</option>
+	                        	<option value=4>投标限时</option>
+	                        	<option value=5>借款协议</option>
+	                        	<option value=6>用户投标须知</option>
+	                        	<option value=7>转让手续费率</option>
+	                        </select>
+						</div>
+					</div>
+				</div>
+				<div id="editDiv">
+					<div class="form-group">
+						<label class="col-md-2 control-label">平台说明类型:</label>
+						<div class="col-md-8" style="width:20%">
+							<span class="form-control" id="type1"></span>
+						</div>
+					</div>
+				</div>
+				<div id="firstContent">
+					<div class="form-group">
+						<label class="col-md-2 control-label">内容</label>
+						<div class="col-md-8">
+							<textarea class="form-control" name="content" id="content" style="display: none"></textarea>
+						</div>
+					</div>
+				</div>
+				<div id="secondContent">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">文件URL:</label>
+						<div class="col-sm-10">
+							<input class="form-control" placeholder="文件URL" type="text" name="imgUrl" id="imgUrl" readonly>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-md-2 control-label"></label>
+						<div class="col-md-8">
+							<button type="button" class="layui-btn" id="test1">
+		                        <i class="layui-icon">&#xe67c;</i>上传文件
+		                    </button>
+		                    <input value="ALIYUN" type="hidden" id="fileSource">
+		                </div>
+					</div>
+				</div>
+				<div id="thirdContent">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">投标时限(天):</label>
+						<div class="col-sm-8">
+							<input class="form-control" placeholder="投标时限(天)" type="text" name="time" id="time"/>
+						</div>
+					</div>
+				</div>
+				<div id="fourthContent">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">转让手续费(%):</label>
+						<div class="col-sm-8">
+							<input class="form-control" placeholder="转让手续费(%)" type="text" name="fee" id="fee"/>
+						</div>
+					</div>
+				</div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" onclick="location.href='explainList.html'">返回</button>
+							<button class="btn btn-primary" type="submit" onclick="add()" id="save">
+								<i class="fa fa-save"></i> 保存
+							</button>
+							<button class="btn btn-primary" type="submit" onclick="updateI()" id="update">
+								<i class="fa fa-save"></i> 修改
+							</button>
+						</div>
+					</div>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+var layedit;
+var index;
+var layer;
+layui.use(['layedit','layer','form','upload'], function(){
+	
+	 layedit = layui.layedit;
+	  
+	  //配置图片上传
+	  layedit.set({
+		  uploadImage: {
+			  url: domainName + '/zuul/api-f/files/layui?fileSource=' + $("#fileSource").val(), //接口url
+			  type: 'post'
+		  }
+	  });
+	  
+	  index=layedit.build('content'); //建立编辑器
+	  initData();
+	  
+	  layer = layui.layer;
+	  
+	  form=layui.form;
+	  
+	//监听select事件
+		form.on('select(test)', function(data){
+			if(data.value==3){
+				$("#firstContent").hide();
+				$("#secondContent").show();
+				$("#thirdContent").hide();
+				$("#fourthContent").hide();
+			}else if(data.value == 4){
+				$("#firstContent").hide();
+				$("#secondContent").hide();
+				$("#thirdContent").show();
+				$("#fourthContent").hide();
+			}else if(data.value == 7){
+				$("#firstContent").hide();
+				$("#secondContent").hide();
+				$("#thirdContent").hide();
+				$("#fourthContent").show();
+			}else{
+				$("#firstContent").show();
+				$("#secondContent").hide();
+				$("#thirdContent").hide();
+				$("#fourthContent").hide();
+			}
+		});
+	  
+	  form.render('select');
+	  
+	  var upload = layui.upload;
+		
+	  upload.render({
+	      elem: '#test1', //绑定元素
+	      accept: 'file', //允许上传的文件类型
+	      url: domainName + '/zuul/api-f/files?fileSource=' + $("#fileSource").val(),
+	      done: function(res, index, upload){
+	    	  $("#imgUrl").val(res.url);
+	    	  $("#imgShow").attr('src',res.url);
+	    	  layer.msg("上传成功");
+	      }
+	  });
+});
+
+function initData(){
+	var explainId=getUrlParam("explainId");
+	var sign=getUrlParam("sign");
+	$("#firstContent").show();
+	$("#secondContent").hide();
+	$("#thirdContent").hide();
+	$("#fourthContent").hide();
+	//添加
+	if(sign==null||sign==""){
+		$("#save").show();
+		$("#update").hide();
+		$("#addDiv").show();
+		$("#editDiv").hide();
+	}else{//编辑
+		$("#save").hide();
+		$("#update").show();
+		$("#addDiv").hide();
+		$("#editDiv").show();
+		
+		$("#id").val(explainId);
+		
+		//判断权限
+		if ($.inArray("financial:explain:update", pers) < 0) {
+			layer.msg("未授权");
+			$("#update").attr("disabled",true);
+			return "";
+		}
+		
+		//获取详细信息
+		$.ajax({
+			type : 'get',
+			url : domainName + '/api-P2P/pfExplains/queryOne/'+explainId,
+			success : function(data) {
+				if(data!=null){
+					$("#typeSelect").val(data.type);
+					form.render(); 
+					if(data.type == "1"){
+						$("#type1").html("风险提示");
+						$("#firstContent").show();
+						$("#secondContent").hide();
+						$("#thirdContent").hide();
+						$("#fourthContent").hide();
+					}else if(data.type == "2"){
+						$("#type1").html("安全保障");
+						$("#firstContent").show();
+						$("#secondContent").hide();
+						$("#thirdContent").hide();
+						$("#fourthContent").hide();
+					}else if(data.type == "3"){
+						$("#type1").html("担保函模板");
+						$("#firstContent").hide();
+						$("#secondContent").show();
+						$("#thirdContent").hide();
+						$("#fourthContent").hide();
+					}else if(data.type == "4"){
+						$("#type1").html("投标限时");
+						$("#firstContent").hide();
+						$("#secondContent").hide();
+						$("#thirdContent").show();
+						$("#fourthContent").hide();
+					}else if(data.type == "5"){
+						$("#type1").html("借款协议");
+						$("#firstContent").show();
+						$("#secondContent").hide();
+						$("#thirdContent").hide();
+						$("#fourthContent").hide();
+					}else if(data.type == "6"){
+						$("#type1").html("用户投标须知");
+						$("#firstContent").show();
+						$("#secondContent").hide();
+						$("#thirdContent").hide();
+						$("#fourthContent").hide();
+					}else if(data.type == "7"){
+						$("#type1").html("转让手续费率");
+						$("#firstContent").hide();
+						$("#secondContent").hide();
+						$("#thirdContent").hide();
+						$("#fourthContent").show();
+					}
+					layedit.setContent(index,data.content);
+					$("#imgUrl").val(data.content);
+					$("#time").val(data.content);
+					$("#fee").val(accMul(data.content));
+				}
+			}
+		});
+	}
+}
+
+function add(){
+	var type = $("#typeSelect").val();
+	//判断此类型平台说明是否存在
+	$.ajax({
+		type : 'get',
+		url : domainName + '/api-P2P/pfExplains/queryTypeCount/'+type,
+		success : function(data) {
+			if(data>0){
+				layer.msg("该类型数据已存在，您不能进行添加！");
+				return;
+			}else{
+				$('#form').bootstrapValidator();
+				//定义一个校验器
+				var bootstrapValidator = $("#form").data('bootstrapValidator');
+				//执行校验
+				bootstrapValidator.validate();
+				//判断校验结果
+			    if(!bootstrapValidator.isValid()){
+				   return;
+			    }
+				
+				var type = $("#typeSelect").val();
+				$("#type").val(type);
+				if(type == "3"){
+					$("#content").val($("#imgUrl").val());
+				}else if(type == "4"){
+					$("#content").val($("#time").val());
+				}else if(type == "7"){
+					var fee = accDiv($("#fee").val());
+					$("#content").val(fee);
+				}else{
+					$("#content").val(layedit.getContent(index));
+				}
+			    var formdata = $("#form").serializeObject();
+			    
+			    $.ajax({
+					type : 'post',
+					url : domainName + '/api-P2P/pfExplains',
+					contentType: "application/json; charset=utf-8",  
+					data : JSON.stringify(formdata),
+					success : function(data) {
+						layer.msg("成功", {shift: -1, time: 1000}, function(){
+			                location.href = "explainList.html";
+			            });
+					}
+				});
+			}
+		}
+	});
+}
+
+
+function updateI(){
+	$('#form').bootstrapValidator();
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	bootstrapValidator.validate();
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+	
+	var type = $("#typeSelect").val();
+	$("#type").val(type);
+	if(type == "3"){
+		$("#content").val($("#imgUrl").val());
+	}else if(type == "4"){
+		$("#content").val($("#time").val());
+	}else if(type == "7"){
+		var fee = accDiv($("#fee").val());
+		$("#content").val(fee);
+	}else{
+		$("#content").val(layedit.getContent(index));
+	}
+    var formdata = $("#form").serializeObject();
+    
+    $.ajax({
+		type : 'put',
+		url : domainName + '/api-P2P/pfExplains',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(formdata),
+		success : function(data) {
+			layer.msg("成功", {shift: -1, time: 1000}, function(){
+                location.href = "explainList.html";
+            });
+		}
+	});
+}
+</script>
+</body>
+</html>

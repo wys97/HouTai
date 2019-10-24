@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/dataTables.bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen" href="../../layui/css/layui.css">
+<link rel="stylesheet" type="text/css" media="screen" href="../../js/laypage/1.3/skin/laypage.css">
+<link rel="stylesheet" href="../../css/newstyle.css">
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+</head>
+<body id="app">
+	<div>
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" id="layerDemo">
+			<header style="height: 100%">
+				<div align="left">
+					<table style="width: 100%">
+						<tr>
+							<td>
+								<form class="form-inline" onsubmit="return false">
+									<div class="form-group">
+										<button class="layui-btn layui-btn-sm" data-method="setTop"'>
+											<i class="layui-icon">&#xe9aa;</i>添加
+										</button>
+										<button id="resetBt" class="layui-btn layui-btn-sm">
+											<i class="layui-icon">&#xe9aa;</i>重置
+										</button>
+									</div>
+								</form>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</header>
+
+			<div style="margin-top: 10px;">
+				<div class="widget-body no-padding">
+					<table id="dt-table" class="table table-striped table-bordered table-hover" style="width: 100%;text-align:center;vertical-align:middle">
+						<thead>
+							<tr>
+								<th width="2%"><input type="checkbox" name="" value="" /></th>
+								<th width="20%"><center>编号</center></th>
+								<th width="20%"><center>分类名称</center></th>
+								<th width="20%"><center>内容数量</center></th>
+								<th width="10%"><center>是否显示</center></th>
+								<th width="20%"><center>排序</center></th>
+								<th><center>操作</center></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr class="text-c" v-for="item in pageData.rows">
+								<td><input type="checkbox" value="{{ item.id }}" name="ids"></td>
+								<td>{{ item.id }}</td>
+								<td>{{ item.columnName }}</td>
+								<td>{{ item.columnName }}</td>
+								<td><input v-if="item.isOpen == 0" type="checkbox" checked/><input v-if="item.isOpen == 1" type="checkbox"/></td>
+								<td>{{ item.columnName }}</td>
+								<td class="td-manage">
+									<button class='layui-btn layui-btn-xs' title='编辑' onclick="edit('{{ item.id }}')">
+										<i class='layui-icon'>&#xe642;</i>编辑
+									</button>
+									<button class='layui-btn layui-btn-xs layui-btn-danger' title='删除' onclick="del('{{ item.id }}')">
+										<i class='layui-icon'>&#xe640;</i>删除
+									</button>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<div v-show="pageData.total > 0" class="laypage_main laypageskin_default" style="margin-top: 10px">
+						<div class="l">
+							<span> 每页 <select name="pageSizeSelect" id="pageSizeSelect" style="vertical-align: baseline !important; height: 27.6px;" onchange="query()">
+									<option value="10" selected="selected">10</option>
+									<option value="25">25</option>
+									<option value="50">50</option>
+									<option value="100">100</option>
+							</select> 条 显示 {{pageData.rowIndexStart}} 到 {{pageData.rowIndexEnd}} ，共 {{pageData.total}} 条
+							</span>
+						</div>
+						<div id="pageNav" class="r"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<!-- <script type="text/javascript" src="../../js/plugin/datatables/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="../../js/plugin/datatables/dataTables.bootstrap.min.js"></script> -->
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/dateUtil.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/laypage/1.3/laypage.js"></script>
+<script type="text/javascript">
+var app = new Vue({
+	el : '#app',
+	data : {
+		pageData : {}
+	}
+});
+layui.use('layer', function(){
+	  var $ = layui.jquery, layer = layui.layer; //独立版的layer无需执行这一句
+	  //触发事件
+	  var active = {
+			  setTop: function(){
+			      //多窗口模式，层叠置顶
+			      layer.open({
+			        type: 1 //此处以iframe举例
+			        ,title: '添加'
+			        ,area: ['600px', '300px']
+			        ,shade: 0
+			        ,maxmin: true
+			        ,offset: 'auto'
+			        ,content: '<form id="form"><div style="padding: 60px;"><label class="col-md-3 control-label">类型名称：</label><div class="col-md-5"><input class="form-control input-sm" type="text" name="columnName" id="columnName"></div><br /><br /><br /><br /><label class="col-md-3 control-label">是否显示：</label><div class="col-md-6"><input type="checkbox" id="isOpen"/></div></div></form>'
+			        ,btn: ['确定', '取消'] //只是为了演示
+			        ,yes: function(){
+			        	layer.closeAll();
+			        	save();
+			        }
+			        ,btn2: function(){
+			          layer.closeAll();
+			        }
+			        ,zIndex: layer.zIndex //重点1
+			        ,success: function(layero){
+			          layer.setTop(layero); //重点2
+			        }
+			      });
+			    }
+	  		};
+	  
+	  $('#layerDemo .layui-btn').on('click', function(){
+	    var othis = $(this), 
+	    method = othis.data('method');
+	    active[method] ? active[method].call(this, othis) : '';
+	  });
+});
+function edit(id){
+	//多窗口模式，层叠置顶
+    layer.open({
+      type: 1 //此处以iframe举例
+      ,title: '编辑'
+      ,area: ['600px', '300px']
+      ,shade: 0
+      ,maxmin: true
+      ,offset: 'auto'
+      ,content: '<form id="form"><input type="hidden" name="id" id="id"><div style="padding: 60px;"><label class="col-md-3 control-label">类型名称：</label><div class="col-md-6"><input class="form-control input-lg" type="text" name="columnName" id="columnName"></div><br /><br /><br /><br /><label class="col-md-3 control-label">是否显示：</label><div class="col-md-6"><input type="checkbox" id="isOpen" /></div></div><form>'
+      ,btn: ['确定', '取消'] //只是为了演示
+      ,yes: function(){
+      	update();
+      	layer.closeAll();
+      }
+      ,btn2: function(){
+        layer.closeAll();
+      }
+      ,zIndex: layer.zIndex //重点1
+      ,success: function(layero){
+        layer.setTop(layero); //重点2
+      }
+    });
+	$.ajax({
+		type : "GET",
+		url : pageUrl + appPackageName + "/discoverColumn/getInfoForBackend?id="+id,
+		success : function(result) {
+			$('#id').val(result.id);
+			$('#columnName').val(result.columnName);
+			if(result.isOpen == 0){
+				$('#isOpen').prop("checked",true)
+			}
+		}
+	});
+}
+/*
+ * 查询
+ */
+function query(pageNo, pageSize) {
+	if (!pageNo) {
+		pageNo = 1;
+	}
+	if (!pageSize) {
+		pageSize = $("#pageSizeSelect").val();
+	}
+	$.ajax({
+		type : "GET",
+		url : pageUrl + appPackageName + "/discoverColumn/getPageListForBackend",
+		data : {
+			pageNum : pageNo,
+			pageSize : pageSize
+		},
+		success : function(result) {
+			app.pageData = result;
+			laypage({
+				cont : 'pageNav',
+				pages : result.totalPage,
+				curr : result.currentPage,
+				skip : true,
+				groups : 6,
+				jump : function(obj, first) {
+					if (!first) {
+						query(obj.curr);
+					}
+				}
+			});
+		}
+	});
+}
+function update() {
+	var searchData = $('#form').serializeArray();
+	/* 获取是否显示的checkbox状态 */
+	if($('#isOpen').prop("checked")){
+		searchData.push({"name":"isOpen","value":"0"})
+	}else{
+		searchData.push({"name":"isOpen","value":"1"})
+	}
+	$.ajax({
+		type : "POST",
+		url : pageUrl + appPackageName + "/discoverColumn/updateForBackend",
+		 data : searchData, 
+		error : function(request) {
+			layer.alert("Connection error");
+		},
+		success : function(result) {
+			if (result.code == 000000) {
+				layer.alert("修改成功");
+				query();
+			}
+		}
+	});
+}
+function save() {
+	var searchData = $('#form').serializeArray();
+	/* 获取是否显示的checkbox状态 */
+	if($('#isOpen').prop("checked")){
+		searchData.push({"name":"isOpen","value":"0"})
+	}else{
+		searchData.push({"name":"isOpen","value":"1"})
+	}
+	$.ajax({
+		type : "POST",
+		url : pageUrl + appPackageName + "/discoverColumn/saveForBackend",
+		 data : searchData, 
+		error : function(request) {
+			layer.alert("Connection error");
+		},
+		success : function(result) {
+			if (result.code == 000000) {
+				layer.alert("添加成功");
+				query();
+			}
+		}
+	});
+}
+/* 批量删除 */
+/* var batchDel = function() {
+		var selectdItems = $(":checkbox[name=ids]:checked");
+		if (selectdItems.size() == 0) {
+			layer.alert("请选择要删除的记录！");
+			return;
+		}
+		var ids = [];
+		selectdItems.each(function() {
+			ids.push($(this).val());
+		});
+
+		layer.confirm('确认要删除吗？', function() {
+			var tipIndex = null;
+			$.ajax({
+				type : "POST",
+				url : pageUrl + userPackageName + "/discoverColumn/delBatch",
+				data : {
+					ids : ids
+				},
+				beforeSend : function() {
+					tipIndex = layer.load(0, {
+						shade : false
+					});
+				},
+				complete : function() {
+					layer.close(tipIndex);
+				},
+				error : function(request) {
+					layer.alert("系统出错");
+				},
+				success : function(data) {
+					layer.alert(data.message);
+					if (data.status == 0) {
+						query();
+					}
+				}
+			});
+		});
+
+	}; */
+/* 删除 */
+function del(id) {
+		var ids = [];
+		ids.push(id);
+		layer.confirm('确认要删除吗？', function() {
+		var tipIndex = null;
+		$.ajax({
+			type : "POST",
+			url : pageUrl + appPackageName + "/discoverColumn/delBatch",
+			data : {
+				ids : ids
+			},
+			beforeSend : function() {
+				tipIndex = layer.load(0, {
+					shade : false
+				});
+			},
+			complete : function() {
+				layer.close(tipIndex);
+			},
+			error : function(request) {
+				layer.alert("系统出错");
+			},
+			success : function(data) {
+				if (data.code == 000000) {
+					layer.alert("删除成功");
+					query();
+				}
+			}
+		});
+	});
+	}
+$(function() {
+	$("#resetBt").click(function() {
+		query();
+	});
+	query();
+});
+</script>
+</html>

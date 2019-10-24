@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+<title>Insert title here</title>
+</head>
+<style>
+body{
+padding:0;margin:0}</style>
+<body>
+	<!-- 标题 -->
+	<div>
+		<p id="title" style='font-size: 24px; margin: 20px 15px 15px 15px;font-weight:900;'></p>
+	</div>
+	<!-- 来源和时间 -->
+	<div style='font-size: 13px; margin: 20px auto 25px 15px'>
+		<p id="time"></p>
+	</div>
+	<!-- 内容 -->
+	<div id="content" style='text-align: justify;font-size: 18px;line-hight:28px;letter-spacing: 4px; margin: auto 15px auto 15px'>
+	
+	</div>
+</body>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript">
+	var width;
+	$(document).ready(function() {
+		width = $(document.body).width(); 
+	})
+	$(function() {
+		var id = getUrlParam("id");
+		$.ajax({
+			type : "GET",
+			url : pageUrl + appPackageName + "/discoverInfo/backendView?id=" + id, 
+			error : function(request) {
+				$("#content").append("呃....出错了");
+			},
+			success : function(result) {
+				var createTime = result.createTime;
+				var datet = createTime.replace(/-/g,"/")
+				var date = new Date(datet);
+				var month = date.getMonth()+1;
+		         $("#time").html(result.dataSource+"&nbsp&nbsp&nbsp&nbsp"+date.getFullYear()+"-"+month+"-"+date.getDate());
+		         $("#title").html(result.title)
+		         $("#content").append(result.content);
+				settingWidth();
+			}
+		});
+	});
+	function settingWidth() {
+		var imglist = $("#content img").each(function(i) {
+			$(this).css("width", width-30);
+		});
+	}
+	//获取url后的参数值（传入参数为url参数名）
+	function getUrlParam(key) {
+		var href = window.location.href;
+		var url = href.split("?");
+		if (url.length <= 1) {
+			return "";
+		}
+		var params = url[1].split("&");
+
+		for (var i = 0; i < params.length; i++) {
+			var param = params[i].split("=");
+			if (key == param[0]) {
+				return param[1];
+			}
+		}
+		return "";
+	}
+</script>
+</html>

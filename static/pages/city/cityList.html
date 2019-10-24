@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	<script src="../../js/vuejs/2.6.10/vue.js"></script>
+	<link rel="stylesheet" href="../../css/elementUI.css">
+	<link rel="stylesheet" href="../../css/newstyle.css">
+	<style>
+		.red{
+			color: red
+		}
+	.el-pager li.active, .el-pager li:hover{
+        color: #1aa094;
+	}
+	</style> 
+</head>
+
+<body>
+	<div id="app">
+		<el-form :inline="true" :model="searchForm" class="demo-form-inline">
+			<el-form-item label="省份">
+
+				<el-select v-model="searchForm.codeP" filterable clearable placeholder="请选择" @change="changeProvince">
+					<el-option v-for="item in provinceList" :key="item.codeP" :label="item.name" :value="item.codeP">
+					</el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item label="城市">
+				<el-select v-model="searchForm.codeC" filterable clearable placeholder="请选择">
+					<el-option v-for="item in cityList" :key="item.codeC" :label="item.name" :value="item.codeC">
+					</el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item label="状态">
+				<el-select v-model="searchForm.state" placeholder="请选择">
+					<el-option v-for="item in stateList" :key="item.value" :label="item.name" :value="item.value">
+					</el-option>
+				</el-select>
+			</el-form-item>
+			<el-form-item>
+				<el-button type="primary" @click="onSubmit">查询</el-button>
+				<el-button @click="reset">重置</el-button>
+			</el-form-item>
+		</el-form>
+		<el-table :data="tableData" class="table" border style="width: 100%">
+			<el-table-column prop="provinceName" align="center" label="省份名称"></el-table-column>
+			<el-table-column prop="cityName" align="center" label="城市名称"></el-table-column>
+			<el-table-column prop="codeC" align="center" label="城市编码"></el-table-column>
+			<el-table-column align="center" label="操作">
+				<template slot-scope="scope">
+					<el-button type="text" class="red" v-if="scope.row.isdel == 1" icon="el-icon-open"  @click="open(scope.row,'0','该城市已关闭')">关停</el-button>
+					<el-button type="text"  v-if="scope.row.isdel == 0" icon="el-icon-turn-off" @click="open(scope.row,'1','该城市已开启')">开放</el-button>
+				</template>
+			</el-table-column>
+		</el-table>
+		<el-pagination layout="prev, pager, next" :total="total" :current-page.sync="searchForm.pageIndex" @current-change="changePage"></el-pagination>
+	</div>
+</body>
+
+<script src="../../js/axios.min.js"></script>
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/common.js"></script>
+<script>
+	new Vue({
+		el: "#app",
+		data: {
+			provinceList: [], //省份数据
+			cityList: [], //门店数据
+			tableData: [], //表格显示数据
+			stateList: [{name: "未开放",value: "0"}, {name: "已开放",value: "1"}],
+			searchForm: {
+				pageIndex: 1,
+				pageSize: 10,
+				state: "0",
+				codeC: "",
+				codeP: "",
+			},
+			total: 1
+		},
+		methods: {
+			getProvince() {
+				axios({
+						method: 'get',
+						url: pageUrl + eatPackageName + "/city/queryProvincelist",
+					})
+					.then((response) => {
+						this.provinceList = response.data.data;
+					})
+					.catch(function (error) {
+						console.log(error);
+					});
+			},
+
+			//城市改变时改变门店下拉列表
+			changeProvince() {
+				this.searchForm.codeC = "";
+				axios({
+						method: 'get',
+						url: pageUrl + eatPackageName + "/city/queryCitylistByProvince?province=" + this.searchForm.codeP,
+					})
+					.then((response) => {
+						this.cityList = response.data.data;
+					})
+					.catch(function (error) {
+						console.log(error);
+					});
+			},
+
+			//获取城市表格数据
+			getData() {
+				axios({
+						method: 'GET',
+						url: pageUrl + eatPackageName + "/city/queryCityListForPage",
+						params: this.searchForm
+					})
+					.then((response) => {
+						this.tableData = response.data.rows;
+						this.total = response.data.total;
+					})
+					.catch(function (error) {
+						console.log(error);
+					});
+			},
+
+			//开启
+			open(e, num,msg) {
+				console.log(e);
+				// if (num == 1) {
+					axios({
+							method: 'PUT',
+							url: pageUrl + eatPackageName + "/city/openOrCloseCity",
+							params: {
+								codeC: e.codeC,
+								codeP: e.codeP,
+								isdel: num,
+								userId:sessionStorage.ID,
+								id: e.id
+							}
+						})
+						.then(res => {
+							if (res.data.code == "000000") {
+								this.$message.success(msg);
+								this.getData();
+							} else {
+								this.$message.error(res.message);
+							}
+						})
+						.catch(function (error) {
+							console.log(error);
+						});
+				// } else {
+				// 	axios({
+				// 			method: 'PUT',
+				// 			url: pageUrl + eatPackageName + "/city/openOrCloseCity",
+				// 			params: {
+				// 				codeC: e.codeC,
+				// 				codeP: e.codeP,
+				// 				isdel: 1,
+				// 				userId:sessionStorage.ID
+				// 			}
+				// 		})
+				// 		.then((response) => {
+				// 			if (response.data.code == "000000") {
+				// 				this.$message.success("该城市已开启");
+				// 				this.getData();
+				// 			} else {
+				// 				this.$message.error("开启失败");
+				// 			}
+				// 		})
+				// 		.catch(function (error) {
+				// 			console.log(error);
+				// 		});
+				// }
+			},
+
+			//搜索按钮
+			onSubmit() {
+				axios({
+					method: 'GET',
+					url: pageUrl + eatPackageName + "/city/queryCityListForPage",
+					params: this.searchForm
+				})
+				.then((response) => {
+					this.tableData = response.data.rows;
+					this.total = response.data.total;
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+			this.changePage(1)
+			},
+
+			//重置
+			reset(){
+				this.searchForm = {
+					pageIndex: 1,
+					pageSize: 10,
+					codeC: "",
+					codeP: "",
+				}
+				this.getData();
+			},
+
+			//分页改变时
+			changePage(e) {
+				
+				this.searchForm.pageIndex = e;
+				this.getData();
+			}
+		},
+		created() {
+			this.getData();
+			this.getProvince();
+		},
+	})
+</script>
+
+</html>

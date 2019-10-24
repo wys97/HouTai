@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/dataTables.bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen" href="../../layui/css/layui.css">
+</head>
+<body>
+	<div>
+    	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        	<header style="height: 100%">
+        		<div align="left">
+	            	<table style="width: 100%">
+	                	<tr>
+	                   		<td>
+	                   			<form class="form-inline" onsubmit="return false">
+									<div class="form-group">
+										标题：
+										<input id="title" type="text" class="form-control" placeholder="标题">
+										跳转链接：
+										<select class="input-sm" id="turnLinkType">
+											<option value="">请选择</option>
+                                			<option value="0">无链接</option>
+                                			<option value="1">站外域名</option>
+                                			<option value="2">新手标</option>
+				                           	<option value="3">产权质押标</option>
+				                           	<option value="4">应收款融资标</option>
+				                           	<option value="5">债券转让</option>
+				                           	<option value="6">平台介绍</option>
+                                		</select>
+										<button id="searchBt" class="layui-btn layui-btn-sm" permission="system:banner:query"><i class="layui-icon">&#xe615;</i>搜索</button>
+										<button id="resetBt" class="layui-btn layui-btn-sm" permission="system:banner:query"><i class="layui-icon">&#xe9aa;</i>重置</button>
+									</div>
+								</form>
+	                   		</td>
+	                   		<td align="right">
+	                   			<button class="layui-btn layui-btn-sm" onclick="location.href='editBanner.html'" permission="system:banner:save">
+	                            	<i class="layui-icon">&#xe608;</i>添加
+	                            </button>
+	                   		</td>
+	                   	</tr> 
+	                </table>
+				</div>
+            </header>
+                
+			<div>
+            	<div class="widget-body no-padding">
+                	<table id="dt-table" class="table table-striped table-bordered table-hover" style="width:100%">
+                    	<thead>
+                        	<tr>
+                            </tr>                       
+                            <tr>
+                            	<th>排序</th>
+                            	<th>标题</th>
+                                <th>图片URL</th>     
+								<th>跳转链接</th>
+								<th>创建时间</th>   
+								<th width="20%">操作</th>
+                        	</tr>
+                    	</thead>
+                        <tbody>
+                        </tbody>
+                	</table>
+            	</div>
+        	</div>
+    	</div>
+	</div>
+</body>
+
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/datatables/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="../../js/plugin/datatables/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript" src="../../js/dateUtil.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+var example;
+
+var layer;
+layui.use(['layer','util'], function(){
+    layer = layui.layer;
+    var util = layui.util;
+    
+    function init(){
+    	example = 
+    		$('#dt-table').DataTable({
+    			"searching": false,
+            	"processing": true,
+            	"serverSide" : true,
+            	"ordering" :false,
+            	"language": {
+                    "url": "../../js/plugin/datatables/Chinese.lang"
+                },
+                "ajax": {
+                	"url" : domainName + "/api-system/banner/queryAll",
+                	"type":"get",
+                	"data":function(d){
+                		//p2p首页
+                		d.type = "2";
+                		d.title = $('#title').val();
+                		d.turnLinkType=$('#turnLinkType').val();
+                	},
+                	"dataSrc": function (json) {
+            			json.recordsTotal=json.total;
+            			json.recordsFiltered=json.total;
+            			return json.data;
+            		},
+            		"error":function(xhr, textStatus, errorThrown){
+        				var msg = xhr.responseText;
+        				console.log(msg);
+        				if (xhr.status == 400) {
+        					layer.msg(JSON.parse(msg).message);
+        				} else if (xhr.status == 401) {
+        					localStorage.removeItem("token");
+        					layer.msg("token过期，请重新登录", {shift: -1, time: 1000}, function(){
+                                location.href = localStorage.getItem("loginUrl");
+                            });
+        				} else if (xhr.status == 403) {
+        					layer.msg('未授权');
+        				} else if (xhr.status == 500) {
+        					var info = JSON.parse(msg);
+        					var exception = info.exception;
+        					var message = info.message;
+        					layer.msg('系统错误：' + (exception ? exception : message));
+        				}
+        			}
+                },
+                "dom": "<'dt-toolbar'r>t<'dt-toolbar-footer'<'col-sm-10 col-xs-12 hidden-xs'i><'col-xs-12 col-sm-10' p v>>",
+                "columns": [
+					{ "data": "sort", "defaultContent": ""},
+                 	{ "data": "title", "defaultContent": ""},
+                 	{ 
+                    	"data": "imgUrl", 
+                    	"defaultContent": "",
+                    	"render": function (data, type, row) {
+                    		var url = row['imgUrl'];
+                    		return "<a target='_blank' href='" + url +"'><img width='30' src='" + url + "'></img></a>";
+                      	}
+                    },
+                 	{ 
+						"data": "turnLinkType",
+						"defaultContent": "",
+						"render": function (data, type, row) {
+							if(data =="0"){
+								return "无链接";
+							}else if(data =="1"){
+								return "站外域名";
+							}else if(data =="2"){
+								return "新手标";
+							}else if(data =="3"){
+								return "产权质押标";
+							}else if(data =="4"){
+								return "应收款融资标";
+							}else if(data =="5"){
+								return "债券转让";
+							}else if(data =="6"){
+								return "平台介绍";
+							}
+							return "";
+						}
+					},
+ 					{ 
+ 						"data": "createTime",
+ 						"defaultContent": "",
+ 						"render": function (data, type, row) {
+ 							return dateFtt("yyyy-MM-dd hh:mm:ss",new Date(data));
+ 						}
+ 					}, 
+                     { 
+                     	"data": "", 
+                     	"defaultContent": "",
+                     	"render": function (data, type, row) {
+                     		var id = row['bannerId'];
+                     		var del = buttonDel(id, "system:banner:delete", pers);
+                     		
+                     		 //修改首页banner
+                            var href = "editBanner.html?bannerId=" + id+"&sign=update";
+                            var edit = buttonEdit(href, "system:banner:update", pers);
+                            
+                            //上移
+                            var up = buttonUp(id, "system:banner:update", pers);
+                            //下移
+                            var down = buttonDown(id, "system:banner:update", pers);
+                            return edit + del + up + down;
+                     	}
+                     },
+                 ]
+    		});
+    }
+
+    init();
+});
+
+function del(bannerId){
+	layer.confirm('确定要删除吗？', {
+        btn : [ '确定', '取消' ]
+    }, function() {
+         $.ajax({
+            type : 'delete',
+            url : domainName + "/api-system/banner/"+bannerId,
+            success : function(data) {
+                example.ajax.reload();
+                layer.msg("删除成功");
+            }
+        });
+        layer.close(1);
+    });
+}
+
+function up(id){
+    $.ajax({
+		type : 'post',
+		url : domainName + '/api-system/banner/move', 
+		data : {bannerId:id,flag:"1"},
+		success : function(data) {
+			if(data==0){
+				layer.msg("无需上移");
+			}else if(data==1){
+				layer.msg("上移成功");
+			}
+			example.ajax.reload();
+		}
+	});
+}
+
+function down(id){
+	$.ajax({
+		type : 'post',
+		url : domainName + '/api-system/banner/move', 
+		data : {bannerId:id,flag:"2"},
+		success : function(data) {
+			if(data==0){
+				layer.msg("无需下移");
+			}else if(data==2){
+				layer.msg("下移成功");
+			}
+			example.ajax.reload();
+		}
+	});
+}
+
+$("#searchBt").click(function(){
+	example.ajax.reload();
+}); 
+
+$("#resetBt").click(function(){
+	$('#title').val("");
+	$('#turnLinkType').val("");
+	example.ajax.reload();
+});
+</script>
+</html>

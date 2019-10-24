@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>layui</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="../../layui/css/layui.css"  media="all">
+  <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+  
+<style type="text/css">
+.layui-field-title {
+    margin: 10px 0 20px;
+    border-width: 0px 0 0;
+}
+.draggable-element {
+  display: inline-block;
+  cursor: move;
+}
+.layui-laypage-btn{
+	background-color: #1aa094 !important;
+	color: #fff !important;
+}
+.layui-layer-btn0{
+	background-color: #1aa094 !important;
+}
+</style>
+</head>
+<body id="app">
+              
+<fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+</fieldset>
+ <fieldset class="layui-elem-field" style="margin-left: 50px;margin-top: 15px;margin-right: 50px;border-width: 0px;">
+<form class="layui-form" lay-verify="example">
+  <div class="layui-form-item" style="width:40%;">
+    <label class="layui-form-label"><font color="red">*</font>厨房名称:</label>
+    <div class="layui-input-block">
+      <input type="text" id="kitchenName" name="kitchenName" lay-verify="kitchenName" autocomplete="off" placeholder="请输入菜品名称" class="layui-input">
+    </div>
+  </div>
+  
+  <div class="layui-form-item">
+    <label class="layui-form-label" style="padding-left: 20px;">城市:</label>
+    <div class="layui-input-inline">
+    	<input type="text" id="codeC" autocomplete="off" class="layui-input" disabled="">
+     </div>
+  </div>
+  
+  <div class="layui-form-item">
+    <label class="layui-form-label"><font color="red">*</font>厨房图片:</label>
+	  <div class="layui-input-block">
+		<button type="button" class="layui-btn" id="test2">多图片上传(最多四张图片)</button> 
+		<button type="button" class="layui-btn" onclick="resetF()" id="">清空列表</button> 
+		<blockquote class="layui-elem-quote layui-quote-nm" style="margin-top: 10px;width: 90%;">
+			 预览图：
+			<div class="layui-upload-list" id="demo2"></div>
+			<input type="hidden" id="kitchenDetailsImg" lay-verify="kitchenDetailsImg" name="kitchenDetailsImg">
+		</blockquote>
+	  </div>
+  </div>
+
+  <table class="layui-hide" id="test" lay-filter="test"></table>
+
+  <div class="layui-form-item">
+    <div class="layui-input-block">
+    	<input type="hidden" name="id" value="{{ id }}"/>
+    	<input type="hidden" data-type="reload" id="idDiv"/>
+      <button class="layui-btn" lay-submit="" lay-filter="insertsh">立即提交</button>
+      <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+      <input type="button" onclick="toPage1()" class="layui-btn layui-btn-normal" value="返回"/>
+    </div>
+  </div>
+  </form>
+  </fieldset>
+
+ <script type="text/html" id="textInput">
+	<input type="text" name="cardcopies" lay-verify="cardcopies" autocomplete="off" placeholder="输入份数" class="layui-input">
+</script>
+ 
+<script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+    <input type="button" class="layui-btn layui-btn-sm" value="添加取餐点" onclick="toDetails()" lay-event="getCheckData"/>
+  </div>
+</script>
+
+<script type="text/html" id="barDemo">
+  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script src="../../layui/layui.js" charset="utf-8"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/drag-arrange.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script>
+
+var orderNosList = [];
+var indexBen = 0;
+var storeInd = "";
+var dishes;
+
+var fileCount = 0;//文件数量
+var fileCountRecord = 0;//文件数量用于多传了回滚数量
+var maxFileCount = 4;//文件上传最大数量
+var boolFiles = false;//判断是否超过限制
+var indexF = "";//记录当前批次图片序列号
+
+var app = new Vue({
+	el : '#app',
+	data : {
+		id : getUrlParam("id"),
+		pageUrl : pageUrl,
+		shihuiPackageName : shihuiPackageName,
+		vueCityListPage : {},
+		vueAffairListPage : {}
+	},
+	created: function () {
+		
+	}
+});
+
+$(function(){
+  		$.ajax({
+  	    	type:'post',
+  	    	url: pageUrl+eatPackageName+'/kitchenManager/selectKitchenById?id='+getUrlParam("id"),
+  	    	data:'',
+  	    	success:function(obj){
+  	    		dishes = obj;
+  	    		$("#kitchenName").val(obj.kitchen_name);
+  	    		$("#codeC").val(obj.code_cName);
+  	    		$("#kitchenDetailsImg").val(obj.kitchen_details_img);
+  	    		$.each(obj.files,function(i,v){
+  	    			$('#demo2').append('<div class="draggable-element"><img value="' + v.id + '" src="'+ v.url +'" alt="'+ i +'" class="layui-upload-img" style="height: 150px;"></div>');
+  	    		});
+	   			$('.draggable-element').arrangeable();
+	  	    		fileCount = obj.files.length;
+	  	    		fileCountRecord = obj.files.length;
+	  	    	}
+  	    });
+});
+
+
+
+function toPage1(){
+	//window.location.href=pageUrl+backendPackageName+"/pages/kitchen/selectKitchen.html";
+	window.location="selectKitchen.html";
+}
+
+layui.use(['form', 'layedit', 'laydate','table'], function(){
+  var form = layui.form
+  ,layer = layui.layer
+  ,layedit = layui.layedit
+  ,laydate = layui.laydate;
+  var table = layui.table;
+  
+  var table = layui.table;
+  
+  table.render({
+    elem: '#test'
+    ,url:pageUrl+eatPackageName+'/kitchenManager/getKitchenFoodStoreInfoAll?ptri='+getUrlParam("ptri")
+    ,toolbar: '#toolbarDemo'
+    ,title: '用户数据表'
+	,width: 1615
+    ,cols: [[
+    	{type:'numbers'}
+      ,{field:'food_store_info_id', width:200, title: '取餐店ID', sort: true}
+      ,{field:'food_store_info_idName', width:350, title: '取餐店名称'}
+      ,{field:'create_time', width:200, title: '创建日期'}
+      ,{fixed: 'right', title:'操作',  toolbar: '#barDemo'}
+    ]]
+    ,id: 'affairReload'
+    ,page: true
+  });
+  
+  table.on('tool(test)', function(obj){
+	    var data = obj.data;
+	      if(obj.event === 'detail'){
+	    	  
+	      }else if(obj.event === 'del'){
+	    	  layer.confirm('确认删除吗？', function(index){
+	    		  $.ajax({
+	    		    	type:'post',
+	    		    	url: pageUrl+eatPackageName+'/kitchenManager/deleteKitchenFoodStoreInfoById?id='+data.id,
+	    		    	data:'',
+	    		    	contentType:"application/json",
+	    		    	success:function(obj){
+	    		    		if(obj.status=='error'){
+	    		    			layer.msg(obj.info); 
+	    		    		}else{
+	    		    			layer.msg(obj.info);
+	    		    			$('#idDiv').click();
+	    		    		}
+	    		    	}
+	    		    });
+	    	  });
+	      }
+	  });
+  
+   form.verify({
+	  kitchenName: function(value){
+          if(value == ""){
+              return '菜品名称不能为空';
+          }
+      }
+	  ,kitchenDetailsImg: function(value){
+			if(value == ""){
+	          return '图片详情内容至少需要一张图片';
+	      }
+	  }
+  });
+  
+   var $ = layui.$, active = {
+		    reload: function(){
+		      var title = $('#kitchenName');
+		      
+		      //执行重载
+		      table.reload('affairReload', {
+		    	url:pageUrl+eatPackageName+'/kitchenManager/getKitchenFoodStoreInfoAll?ptri='+getUrlParam("ptri")
+		        ,page: {
+		          curr: 1 //重新从第 1 页开始
+		        }
+		        ,where: {
+		        	kitchenName:title.val()
+		        }
+		      });
+		    }
+		  };
+		  
+		  $('#idDiv').on('click', function(){
+			    var type = $(this).data('type');
+			    active[type] ? active[type].call(this) : '';
+			  });
+		  
+  
+//监听提交
+  form.on('submit(insertsh)', function(data){
+	  data.field.kitchenDetailsImg = "";
+	  $(".layui-upload-img").each(function(i,v){
+		  data.field.kitchenDetailsImg += $(this).attr("value") + " ";
+	  });
+	  
+    /* layer.alert(JSON.stringify(data.field), {
+      title: '最终的提交信息'
+    })   */
+    
+    
+    $.ajax({
+    	type:'post',
+    	url: pageUrl+eatPackageName+'/kitchenManager/updateKitchenInfo',
+    	data:JSON.stringify(data.field),
+    	contentType:"application/json",
+    	success:function(obj){
+    		if(obj.status=='error'){
+    			layer.msg(obj.info);    			
+    		}else if(obj.status=='success'){
+    			toPage1();
+    		}else{
+    			layer.msg("新增数据有误！");
+    		}
+    	}
+    });
+    return false;
+  });
+  
+  
+});
+	
+	
+layui.use('upload', function(){
+	var $ = layui.jquery
+	  ,upload = layui.upload;
+	
+	  //多图片上传
+	  upload.render({
+	    elem: '#test2'
+	    ,url: pageUrl + userPackageName + '/fileInfo/wangEditorFileUpload'
+	    ,multiple: true
+	    ,before: function(obj){
+	      //预读本地文件示例，不支持ie8
+	      obj.preview(function(index, file, result){
+	    	  indexF = index.split("-")[0];
+	    	  fileCount++;
+	    	  if(fileCount>maxFileCount){
+	        	  fileCount = maxFileCount;
+	          	  layer.msg('文件数量不得超过'+maxFileCount+'个',{icon:2});
+	  	          boolFiles = true;
+	              return;
+	          }else{
+	        	  boolFiles = false;
+	        	  $('#demo2').append('<div class="draggable-element"><img id="' + file.name.split(".")[0] + '" name="' + indexF + '" src="'+ result +'" alt="'+ file.name +'" class="layui-upload-img" style="height: 150px;"></div>');
+			      $('.draggable-element').arrangeable();
+	          }
+	      });
+	    }
+	    ,done: function(res){
+	      //上传完毕
+	      if(boolFiles){
+	    	  eval('$("img[name=' + indexF + ']")').remove();
+	    	  fileCount = fileCountRecord;
+	      }else{
+		      $("#kitchenDetailsImg").val($("#kitchenDetailsImg").val()+" "+res.data.id);
+		      eval('$("#' + res.data.filename + '")').attr("value",res.data.id);
+		      fileCountRecord = fileCount;
+	      }
+	    }
+	  });
+});
+
+function resetF(){
+	$('#demo2').html("");
+    $("#kitchenDetailsImg").val("");
+    fileCount = 0;
+    fileCountRecord = 0;
+}
+
+
+function toDetails(){
+	//window.location.href=pageUrl+backendPackageName+"/pages/kitchen/insertKitchenFoodStoreInfo.html?id="+getUrlParam("id")+"&ptri="+getUrlParam("ptri")+"&codeC="+getUrlParam("codeC");
+	window.location="insertKitchenFoodStoreInfo.html?id="+getUrlParam("id")+"&ptri="+getUrlParam("ptri")+"&codeC="+getUrlParam("codeC");
+}
+
+</script>
+
+</body>
+</html>

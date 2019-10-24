@@ -1,0 +1,5 @@
+.indexbtn{
+	position:absolute;
+	left:250px;
+	top:25%;
+}

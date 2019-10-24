@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<br/>
+			<input type="hidden" id="id" name="id">
+			<fieldset>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">借款标类型:</label>
+					<div class="col-sm-4 layui-form" style="width:25%">
+						<input type="hidden" id="type" name="type"> 
+						<select id="typeSelect" lay-filter="test">
+							<option value=3>应收款融资</option>
+                        	<option value=2>产权质押融资</option>
+                        	<option value=1>新手标</option>
+                        </select>
+					</div>
+					<label class="col-sm-2 control-label">平台收取佣金比例(%):</label>
+					<div class="col-sm-4" style="width:25%">
+						<input class="form-control" placeholder="平台收取佣金比例(%)" type="text" name="commissionDefault" id="commissionDefault">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">最大投资金额(元):</label>
+					<div class="col-sm-4" style="width:25%">
+						<input class="form-control" placeholder="最大投资金额" type="text" name="maxMoney" id="maxMoney"
+						data-bv-notempty="true"
+						data-bv-notempty-message="最大投资金额不能为空">
+					</div>
+					<label class="col-sm-2 control-label">最小投资金额(元):</label>
+					<div class="col-sm-4" style="width:25%">
+						<input class="form-control" placeholder="最小投资金额" type="text" name="minMoney" id="minMoney"
+						data-bv-notempty="true"
+						data-bv-notempty-message="最小投资金额不能为空">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">逾期费率(%/天):</label>
+					<div class="col-sm-4" style="width:25%">
+						<input class="form-control" placeholder="逾期费率(%/天)" type="text" name="overdueCost" id="overdueCost"
+					    data-bv-notempty="true"
+						data-bv-notempty-message="逾期费率不能为空">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">借款天数:</label>
+					<div class="col-sm-4" style="width:25%">
+						<input class="form-control" placeholder="借款天数" type="text" id="repaymenDay0">
+					</div>
+					<label class="col-sm-2 control-label">年化率(%):</label>
+					<div class="col-sm-4" style="width:25%">
+						<input class="form-control" placeholder="年化率(%)" type="text" id="rateYear0">
+					</div>
+				</div>
+				<div id="dayToRateDIV"></div>
+				<input type="hidden" id="removeNum"> 
+				
+				<div class="form-group">
+					<label class="col-sm-2 control-label"></label>
+					<div class="col-sm-8">
+						<input value="0" type="hidden" id="attrNum" > 
+						<button type="button" class="layui-btn" onclick="addDayToRate()">
+	                        <i class="layui-icon">&#xe654;</i>新增借款天数与年化率
+	                    </button>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">参与要求:</label>
+					<div class="col-sm-10" style="width:67%">
+						<textarea class="form-control" name="joinCondition" id="joinCondition" placeholder="参与要求"></textarea>
+					</div>
+				</div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" onclick="cancel()">取消</button>
+							<button class="btn btn-primary" type="submit" onclick="addBidTypeSetting()" id="save">
+								<i class="fa fa-save"></i> 保存
+							</button>
+							<button class="btn btn-primary" type="submit" onclick="updateBidTypeSetting()" id="update">
+								<i class="fa fa-save"></i> 修改
+							</button>
+						</div>
+					</div>
+				</div>
+				<br/>
+			</fieldset>
+		</form>
+	</div>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+var layer;
+var form;
+layui.use(['upload','layer','form'], function(){
+	var upload = layui.upload;
+	layer = layui.layer;
+	form=layui.form;
+	
+	form.render('select');
+	
+	initData();
+});
+
+function initData(){
+	var bidTypeSettingId=getUrlParam("id");
+	var sign=getUrlParam("sign");
+	
+	if(sign==null||sign==""){
+		$("#save").show();
+		$("#update").hide();
+	}else{
+		$("#save").hide();
+		$("#update").show();
+		
+		$("#id").val(bidTypeSettingId);
+		
+		//判断权限
+		if ($.inArray("financial:bidTypeSetting:update", pers) < 0) {
+			layer.msg("未授权");
+			$("#update").attr("disabled",true);
+			return "";
+		}
+		
+		//获取详细信息
+		$.ajax({
+			type : 'get',
+			url : domainName + '/api-P2P/pfBidTypeSettings/queryOne/'+bidTypeSettingId,
+			success : function(data) {
+				if(data!=null){
+					$("#typeSelect").val(data.type);
+					form.render(); 
+					$("#overdueCost").val(accMul(data.overdueCost));
+					$("#minMoney").val(data.minMoney);
+					$("#maxMoney").val(data.maxMoney);
+					$("#joinCondition").val(data.joinCondition);
+					$("#commissionDefault").val(accMul(data.commissionDefault));
+					
+					var list = data.list;
+					for(var i=0;i<list.length;i++){
+						if(i==0){
+							$("#repaymenDay"+i).val(list[i].repaymenDay);
+							$("#rateYear"+i).val(accMul(list[i].rateYear));
+						}else{
+							addDayToRate();
+							$("#repaymenDay"+i).val(list[i].repaymenDay);
+							$("#rateYear"+i).val(accMul(list[i].rateYear));
+						}
+					}
+				}
+			}
+		});
+	} 
+}
+
+function inArray(v,arr){
+	var flag = 0;
+	for(var i=0;i<=arr.length;i++){
+		if(v == parseInt(arr[i])){
+			flag = 1;
+		}
+	}
+	return flag;
+}
+
+function addBidTypeSetting(){
+	var params = [];
+	var attrNum = $("#attrNum").val();
+	
+	//去除已删除的
+	var removeNum = $("#removeNum").val();
+	var removeNumArr = [];
+	if(removeNum != ""){
+		removeNumArr = removeNum.split(",");
+	}
+	
+	for(var i=0;i<=attrNum;i++){
+		if(removeNumArr.length != 0){
+			if(1 == inArray(i,removeNumArr)){
+				continue;
+			}
+		}
+		
+		var repaymenDay =  $("#repaymenDay"+i).val();
+		if(repaymenDay == "" || repaymenDay == null){
+			layer.msg("借款天数不能为空!");
+			return;
+		}
+		
+		var rateYear =  $("#rateYear"+i).val();
+		if(rateYear == "" || rateYear == null){
+			layer.msg("年化率不能为空!");
+			return;
+		}
+		
+		if(isRealNum(rateYear)) {
+			rateYear = accDiv(rateYear);
+		}else{
+			layer.msg("年化率,请填写数字!");
+			return;
+		}
+		
+		var listChild={};
+    	listChild.repaymenDay = repaymenDay;
+    	listChild.rateYear = rateYear;
+    	listChild.type = $("#typeSelect").val();
+    	params.push(listChild);
+	}
+	
+	var commissionDefault = $("#commissionDefault").val();
+	if(isRealNum(commissionDefault)) {
+		commissionDefault = accDiv(commissionDefault);
+	}else{
+		layer.msg("平台收取佣金比例,请填写数字!");
+		return;
+	}
+	
+	var overdueCost = $("#overdueCost").val();
+	if(isRealNum(overdueCost)) {
+		overdueCost = accDiv(overdueCost);
+	}else{
+		layer.msg("逾期费率,请填写数字!");
+		return;
+	}
+	
+	$('#form').bootstrapValidator();
+	//定义一个校验器
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	//执行校验
+	bootstrapValidator.validate();
+	//判断校验结果
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+    
+    var obj = new Object();
+    obj.type = $("#typeSelect").val();
+    obj.commissionDefault = commissionDefault;
+    obj.maxMoney = $("#maxMoney").val();
+    obj.minMoney = $("#minMoney").val();
+    obj.overdueCost = overdueCost;
+    obj.joinCondition = $("#joinCondition").val();
+    obj.list = params;
+    
+   	$.ajax({
+		type : 'post',
+		url : domainName + '/api-P2P/pfBidTypeSettings',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(obj),
+		success : function(data) {
+			if(data == "1"){
+				layer.msg("该标类型已存在,添加失败！", {shift: -1, time: 1000}, function(){
+					var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+					parent.layer.close(index);
+					parent.example.ajax.reload();
+	            });
+			}else {
+				layer.msg("成功", {shift: -1, time: 1000}, function(){
+					var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+					parent.layer.close(index);
+					parent.example.ajax.reload();
+	            });
+			}
+		}
+	});
+}
+
+function isRealNum(val){
+    // isNaN()函数 把空串 空格 以及NUll 按照0来处理 所以先去除
+    if(val === "" || val ==null){
+        return false;
+    }
+    if(!isNaN(val)){
+        return true;
+    }else{
+        return false;
+    }
+} 
+
+function updateBidTypeSetting(){
+	var params = [];
+	var attrNum = $("#attrNum").val();
+	
+	//去除已删除的
+	var removeNum = $("#removeNum").val();
+	var removeNumArr = [];
+	if(removeNum != ""){
+		removeNumArr = removeNum.split(",");
+	}
+	
+	for(var i=0;i<=attrNum;i++){
+		if(removeNumArr.length != 0){
+			if(1 == inArray(i,removeNumArr)){
+				continue;
+			}
+		}
+		
+		var repaymenDay =  $("#repaymenDay"+i).val();
+		if(repaymenDay == "" || repaymenDay == null){
+			layer.msg("借款天数不能为空!");
+			return;
+		}
+		
+		var rateYear =  $("#rateYear"+i).val();
+		if(rateYear == "" || rateYear == null){
+			layer.msg("年化率不能为空!");
+			return;
+		}
+		
+		if(isRealNum(rateYear)) {
+			rateYear = accDiv(rateYear);
+		}else{
+			layer.msg("年化率,请填写数字!");
+			return;
+		}
+		
+		var listChild={};
+    	listChild.repaymenDay = repaymenDay;
+    	listChild.rateYear = rateYear;
+    	listChild.type = $("#typeSelect").val();
+    	params.push(listChild);
+	}
+	
+	var commissionDefault = $("#commissionDefault").val();
+	if(isRealNum(commissionDefault)) {
+		commissionDefault = accDiv(commissionDefault);
+	}else{
+		layer.msg("平台收取佣金比例,请填写数字!");
+		return;
+	}
+	
+	var overdueCost = $("#overdueCost").val();
+	if(isRealNum(overdueCost)) {
+		overdueCost = accDiv(overdueCost);
+	}else{
+		layer.msg("逾期费率,请填写数字!");
+		return;
+	}
+	
+	$('#form').bootstrapValidator();
+	//定义一个校验器
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	//执行校验
+	bootstrapValidator.validate();
+	//判断校验结果
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+    
+    var obj = new Object();
+    obj.id = $("#id").val();
+    obj.type = $("#typeSelect").val();
+    obj.commissionDefault = commissionDefault;
+    obj.maxMoney = $("#maxMoney").val();
+    obj.minMoney = $("#minMoney").val();
+    obj.overdueCost = overdueCost;
+    obj.joinCondition = $("#joinCondition").val();
+    obj.list = params;
+    
+    $.ajax({
+		type : 'put',
+		url : domainName + '/api-P2P/pfBidTypeSettings',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(obj),
+		success : function(data) {
+			if(data == "1"){
+				layer.msg("该标类型已存在，修改失败！", {shift: -1, time: 1000}, function(){
+					var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+					parent.layer.close(index);
+					parent.example.ajax.reload();
+	            });
+			}else {
+				layer.msg("成功", {shift: -1, time: 1000}, function(){
+					var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+					parent.layer.close(index);
+					parent.example.ajax.reload();
+	            });
+			}
+		}
+	});
+}
+
+function cancel(){
+	var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+	parent.layer.close(index);
+}
+
+function addDayToRate(){
+	var num =parseInt($("#attrNum").val())+1;
+	$("#attrNum").val(num);
+	var str='\
+		<div id="DayToRateDiv'+num+'">\
+			<div class="form-group">\
+				<label class="col-sm-2 control-label">借款天数:</label>\
+				<div class="col-sm-2" style="width:25%">\
+					<input class="form-control" placeholder="借款天数" type="text" id="repaymenDay'+num+'">\
+				</div>\
+				<label class="col-sm-2 control-label">年化率(%):</label>\
+				<div class="col-sm-8" style="width:25%">\
+					<input class="form-control" placeholder="年化率(%)" type="text" id="rateYear'+num+'">\
+				</div>\
+			</div>\
+			<div class="form-group">\
+				<label class="col-sm-2 control-label"></label>\
+				<div class="col-sm-2" style="width:25%">\
+					<button type="button" class="layui-btn" style="height:30px;line-height:30px;" onclick="delAttr('+num+');">\
+						<i class="layui-icon">&#xe640;</i> 删除\
+					</button>\
+				</div>\
+			</div>\
+		</div>';
+	$("#dayToRateDIV").before(str);
+}
+
+function delAttr(id){
+	$("#DayToRateDiv"+id).remove();
+	var removeNum =  $("#removeNum").val();
+	if(removeNum == ""){
+		removeNum += id;
+	}else{
+		removeNum += ","+id;
+	}
+	$("#removeNum").val(removeNum);
+}
+
+</script>
+</body>
+</html>

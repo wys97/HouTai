@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<!-- 引入样式 -->
+<link rel="stylesheet" href="../../css/elementUI.css">
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script src="../../js/axios.min.js"></script>
+<script src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/common.js"></script>
+<script src="http://cdn.tinymce.com/4/tinymce.min.js"> </script>
+<script src="../../langs/zh_CN.js"></script>
+<style>
+    [v-cloak] {
+        opacity: 0;
+    }
+    .disabled .el-upload--picture-card {
+        display: none;
+    }
+</style>
+
+<body>
+    <div id="app" v-cloak>
+
+        <el-form :model="form" class="demo-form-inline" style="display: inline-block" label-width="120px">
+            <el-form-item label="新闻标题">
+                <el-input v-model="form.title" placeholder="请输入新闻标题"></el-input>
+            </el-form-item>
+
+            <el-form-item label="新闻第一张图片">
+                <el-upload :action="action" :class="{disabled:form.imgUrl !=''}" list-type="picture-card" :on-success="bigPictureSuccess" :on-preview="bigPicturePreview" :on-remove="bigPictureRemove"> <i class="el-icon-plus"></i></el-upload>
+                <el-dialog :visible.sync="dialogVisible">
+                    <img width="100%" :src="form.imgUrl" alt="">
+                </el-dialog>
+            </el-form-item>
+
+            <el-form-item label="新闻类型">
+                <el-select v-model="form.type" placeholder="请选择新闻类型">
+                    <el-option label="公司新闻" value="1"></el-option>
+                    <el-option label="产业资讯" value="2"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="新闻排序">
+                <el-input v-model="form.rank" placeholder="请输入新闻排序"></el-input>
+            </el-form-item>
+            <el-form-item label="新闻来源">
+                <el-input v-model="form.author" placeholder="禾师傅"></el-input>
+            </el-form-item>
+        </el-form>
+        <div style="margin-left:50px">
+            <p style="font: 14px">新闻正文</p>
+            <textarea id="textarea1" style="width: 1000px"> </textarea>
+        </div>
+        <div>
+            <el-button @click="sub">立即添加</el-button>
+            <el-button @click="back">返回</el-button>
+        </div>
+
+
+        <!-- <el-pagination background layout="prev, pager, next" :total="total" @current-change="change"></el-pagination>  -->
+
+    </div>
+</body>
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            action: `${pageUrl}${userPackageName}/fileInfo/wangEditorFileUpload`,
+            dialogVisible: false,
+
+
+            form: {
+                title: "",
+                text: "",
+                imgUrl: "",
+                type: "",
+                rank: "",
+                author: "",
+            }
+        },
+        methods: {
+            //获取列表数据
+            getTableData() {
+                axios({
+                        method: 'get',
+                        url: pageUrl + backendPackageName + "/newsadmin/queryNewsListForPage",
+                        params: this.form
+                    })
+                    .then((response) => {
+                        console.log(response);
+                        // let data = response.data.rows.map((val) =>{
+                        //     val.state == 0 ? val.state = "未配置" : val.state = "已配置";
+                        // })
+                        this.tableData = response.data.rows;
+                        // this.total = response.data.total;
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            },
+
+            edit(e) {
+                window.location.href = `./editMenu.html?code_c=${e.code_c}&storeId=${e.storeId}`
+            },
+            sub() {
+
+                let activeEditor = tinymce.activeEditor;
+                let editBody = activeEditor.getBody();
+                activeEditor.selection.select(editBody);
+                let text = activeEditor.selection.getContent();
+                let data = this.form;
+                var imgReg = /<img.*?(?:>|\/>)/gi;
+                var srcReg = /src="([^"]*)"/
+                var arr = text.match(imgReg);
+                data.text = text;
+                // data.imgUrl = arr[0].match(srcReg)[0].slice(5, -1);
+                // data.imgUrl = '';
+
+                console.log(data);
+
+                // axios({
+                //         method: 'POST',
+                //         url: pageUrl + backendPackageName + "/newsadmin/save",
+                //         params: data
+                //     })
+                //     .then((response) => {
+                //         console.log(response);
+                //         if (response.data.code == "000000") {
+                //             this.$alert('添加成功', '提示', {
+                //                 confirmButtonText: '确定',
+                //                 callback: action => {
+                //                     window.location.href = "./newsList.html";
+                //                 }
+                //             });
+                //         } else {
+                //             this.$message.error(response.data.message)
+                //         }
+                //     })
+                //     .catch(function (error) {
+                //         console.log(error);
+                //     });
+            },
+            back() {
+                window.location.href = "./newsList.html";
+            },
+
+            bigPictureSuccess(files, fileList) {
+                this.form.imgUrl = files.data.src;
+                // this.bigPictureId = files.data.id;
+                console.log(files, fileList);
+            },
+
+            //大图移除文件时的钩子
+            bigPictureRemove(file, fileList) {
+                console.log(file, fileList);
+                this.form.imgUrl = "";
+                // this.bigPictureId = "";
+            },
+
+            //大图上传时的钩子
+            bigPicturePreview(file) {
+                this.dialogVisible = true;
+                // console.log("大图上传时的钩子",file);
+            },
+
+        },
+        created() {
+            tinymce.init({
+                selector: '#textarea1', // change this value according to your HTML
+                plugins: 'image code autoresize',
+
+                images_upload_handler: function (blobInfo, success, failure) {
+                    var xhr, formData;
+                    xhr = new XMLHttpRequest();
+                    xhr.withCredentials = false;
+                    xhr.open('POST','http://47.107.118.242:8763/heque-user/fileInfo/wangEditorFileUpload');
+                    xhr.onload = function () {
+                        var json;
+                        if (xhr.status != 200) {
+                            failure('HTTP Error: ' + xhr.status);
+                            return;
+                        }
+                        json = JSON.parse(xhr.responseText).data;
+                        console.log(json);
+                        success(json.src);
+                    };
+
+                    formData = new FormData();
+                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                    xhr.send(formData);
+                },
+                language: 'zh_CN',
+            })
+
+        },
+    })
+</script>
+
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<!-- 引入样式 -->
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+<link rel="stylesheet" href="../../css/newstyle.css">
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<link rel="stylesheet" href="../../css/elementUItheme/button.css">
+<script type="text/javascript" src="../../js/common.js"></script>
+<script src="../../js/axios.min.js"></script>
+<!-- 引入组件库 -->
+<style>
+    *{
+        margin: 0;
+        padding: 0;
+    }
+    [v-cloak]{
+        opacity: 0;
+    }
+    .formSubmitBox {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .userAddText {
+        text-align: center;
+        margin: 15px 0;
+    }
+
+    .btn {
+        position: relative;
+        left: 20px;
+        top: 5px;
+        cursor: pointer;
+    }
+
+    .text {
+        font-size: 14px;
+    }
+
+    .item {
+        padding: 18px 0;
+    }
+
+    .box-card {
+        width: 400px;
+    }
+
+    .font {
+        font-size: 14px;
+        color: #606266;
+    }
+
+    .form-top{
+        margin-top: 20px;
+        padding: 0 20px;
+    }
+    .form-top > div{
+        margin: 10px 0;
+    }
+    .oneMenu .el-checkbox .el-checkbox__label{
+        color: #fff !important;
+    }
+    .oneMenu, .twoMenu, .threeMenu{
+        padding: 0 20px;    
+    }
+    .oneMenu {
+        background: #1aa094;
+        height: 40px;
+        line-height: 40px;
+        font-weight: bolder;
+    }
+
+    .twoMenu {
+        background: #F2F2F2;
+        height: 40px;
+        line-height: 40px;
+    }
+
+    .twoMenu>span {
+        margin-left: 45px
+    }
+
+    .threeMenu {
+        height: 100px;
+        /* float: left; */
+        padding-left: 45px
+    }
+
+    .threeMenuBox {
+        height: 40px;
+        line-height: 40px
+    }
+    .buttonarea{
+        text-align: center;
+        margin-bottom: 10px;
+    }
+</style>
+<!-- 角色管理，角色详情页面 -->
+
+<body>
+    <div id="app" v-cloak>
+        <div class="form">
+            <div class="form-top">
+                <p style="font-weight: bolder">编辑角色信息</p>
+                <div>
+                    角色名称：
+                    <el-input placeholder="请输入内容" style="width:500px" v-model="name"></el-input>
+                </div>
+                <div>
+                    角色等级：
+                    <el-input placeholder="请输入角色等级" style="width:500px" v-model="level"></el-input>
+                </div>
+                <div>
+                    角色描述：
+                    <el-input type="textarea" :rows="3" style="width:500px;vertical-align: top" placeholder="请输入内容"  v-model="remark">
+                    </el-input>
+                </div>
+                <div>
+                    <span>同步登录APP</span>
+                    <el-checkbox v-model="synchronizationApp">开通此权限创建该角色账号将能同时登录供餐端App和后台管理系统。</el-checkbox>
+                </div>
+
+            <!-- <span> -->
+                <p style="font-weight: bolder;margin-top: 20px;margin-bottom: 10px;">权限设置</p>
+            </div>
+                <div v-for="(item, index) in appMenu" :key="item.index">
+                    <div v-if="synchronizationApp">
+                        <div class="oneMenu"><el-checkbox style="margin-left:5px" v-model="item.state" @change="firstChange(item)">{{item.menuName}}</el-checkbox></div>
+                        <div class="" v-for="(item2) in item.children" :key=item2.id >
+                            <div class="twoMenu">
+                                    <el-checkbox style="margin-left:5px" v-model="item2.state" @change="twoSelectAll(item2,item)"> {{item2.menuName}}</el-checkbox>
+                            </div>
+                            <div class="threeMenuBox">
+                                <span v-for="(item3) in item2.operationes" class="threeMenu">
+                                   <el-checkbox style="margin-left:5px" v-model="item3.state" @change="treeChange(item2,item)"> {{item3.btnName}}</el-checkbox>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-for="(item, index) in menuList" :key="item.index">
+                    <div v-if="item.type == 0">
+                        <div class="oneMenu"><el-checkbox v-model="item.state" @change="firstChange(item)"> {{item.menuName}}</el-checkbox></div>
+                    
+                        <div class="" v-for="(item2, index) in item.children">
+                            <div class="twoMenu">
+                                <el-checkbox v-model="item2.state" @change="twoSelectAll(item2,item)"> {{item2.menuName}}</el-checkbox>
+                            </div>
+                            <div class="threeMenuBox">
+                                <span v-for="(item3, index) in item2.operationes" class="threeMenu">
+                                    <el-checkbox v-model="item3.state"  @change="treeChange(item2,item)">{{item3.btnName}}</el-checkbox>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="buttonarea">
+                <el-button type="primary" @click="sub">确定</el-button>
+                <el-button type="primary" @click="back" plain>返回</el-button>
+            </div>
+    </div>
+
+    </div>
+</body>
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            name: "",                   //角色名
+            remark: "",                 //角色描述
+            level:"",                   //角色等级
+            synchronizationApp: false,  //同步APP
+            menuList: [],               //菜单列表
+            detailData: {},             //详情数据
+            menu: [],                   //菜单列表ID  
+            appMenu: [],                //同步app选中时菜单
+            oneMenuSelectData:[],
+            twoMenuSelectData:[],
+            treeMenuSelectData:[],
+            editData:[]
+        },
+        created() {
+            var url = location.search; //获取url中"?"符后的字串 ('?modFlag=business&role=1')
+            var theRequest = new Object();
+            if (url.indexOf("?") != -1) {
+                var str = url.substr(1); //substr()方法返回从参数值开始到结束的字符串；
+                var strs = str.split("&");
+                for (var i = 0; i < strs.length; i++) {
+                    theRequest[strs[i].split("=")[0]] = (strs[i].split("=")[1]);
+                }
+                console.log(theRequest);
+            }
+            // 查询菜单列表数据
+            // 根据ID获取用户详情
+            axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName + `/permission/queryRoleDetail?id=${theRequest.id}`,
+                })
+                .then((response) => {
+                    let data = response.data.data;
+                    this.name = data.roleName;
+                    this.remark = data.remark;
+                    this.level = data.level;
+                    console.log("用户详情", data);
+
+                    let operationStr = []
+
+                    data.rolePermission == null ? "" :this.oneMenuSelectData = data.firstMenuStr.split(',');
+                    data.secondMenuStr == null ? "" :this.twoMenuSelectData = data.secondMenuStr.split(',');
+                    this.synchronizationApp = data.isApp;
+                  
+                    if(data.operationStr == "" || data.operationStr == null){
+                    }else{
+                        operationStr = data.operationStr.split(',');
+                        this.treeMenuSelectData = operationStr.filter((val) => {
+                        return val != "";
+                    });
+                    }
+
+                    data.isApp == 1 ? this.synchronizationApp = true : this.synchronizationApp = false;
+                    this.detailData = data;
+                    this.getMenuList();
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        },
+        watch: {
+            synchronizationApp(val){
+                console.log("APP数据变动",val);
+                if(val == true){
+                   for (let i = 0; i <  this.appMenu.length; i++) {
+                      console.log(this.appMenu[i]);
+                   }
+                }else{
+                    for(let i = 0; i <  this.appMenu.length; i++){
+                        this.appMenu[i].state = false;
+                        for (let j = 0; j < this.appMenu[i].children.length; j++) {
+                            this.appMenu[i].children[j].state = false;
+                            for (let k = 0; k < this.appMenu[i].children[j].operationes.length; k++) {
+                                this.appMenu[i].children[j].operationes[k].state = false;
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        methods: {
+            //全选测试方法
+            checkedAll(element, index, array){
+                return (element.state == true);
+            },
+
+            //二级菜单点击时，给操作菜单check的正选反选
+            twoSelectAll(item2,item){
+                console.log("二级菜单",item2);
+                console.log("一级菜单",item);
+                   if(item2.state == false){
+                        item2.operationes.map((val) => {
+                            val.state = false;
+                        })
+                   }else if(item2.state == true){
+                        item2.operationes.map((val) => {
+                            val.state = true;
+                        })
+                   };
+                let result = item.children.every(this.checkedAll);
+                result == false ? item.state = false : item.state = true;
+            },
+
+            //操作菜单check时处理事件(三级菜单)
+            treeChange(item2,item){
+                console.log("一级菜单",item);
+                let result1 = item2.operationes.every(this.checkedAll);
+                result1 == false ? item2.state = false : item2.state = true;
+
+                let result2 = item.children.every(this.checkedAll);
+                console.log(result2);
+                result2 == true ? item.state = true :item.state = false; 
+            },
+
+            //一级菜单的正选反选
+            firstChange(item) {
+                if(item.state == true){
+                   for (let i = 0; i < item.children.length; i++) {
+                    item.children[i].state = true;
+                        for (let j = 0; j < item.children[i].operationes.length; j++) {
+                            item.children[i].operationes[j].state = true
+                        }
+                   }
+                } else if (item.state == false){
+                    for (let i = 0; i < item.children.length; i++) {
+                    item.children[i].state = false;
+                        for (let j = 0; j < item.children[i].operationes.length; j++) {
+                            item.children[i].operationes[j].state = false
+                        }
+                   }
+                }
+            },
+
+            //返回按钮 
+            back(){
+                window.location.href = "./roles.html";
+            },
+
+            //提交按钮
+            sub(){
+                let data = [];
+                for (let i = 0; i < this.menuList.length; i++) {
+                    for (let j = 0; j < this.menuList[i].children.length; j++) {
+                      for (let k = 0; k < this.menuList[i].children[j].operationes.length; k++) {
+                          if( this.menuList[i].children[j].operationes[k].state == true){
+                            data.push( this.menuList[i].children[j].operationes[k])
+                          }
+                      }
+                    }
+                }
+                console.log(data);
+                let one = [];
+                let two = [];
+                for (let i = 0; i < data.length; i++) {
+                    let obj1 = {menuId:data[i].belongMenu,operationId:data[i].id};
+                    one.push(obj1)
+                    let obj2 = {menuId:data[i].oneMenuId,operationId:""};
+                    two.push(obj2)
+                }
+
+                one=one.map((item,index,arr) => {
+                    const i=arr.find(_item=>item.menuId ===_item.menuId);
+                    if(i!==item){
+                        i.operationId.push(item.operationId);
+                        return undefined;
+                    }else{
+                        i.operationId = [i.operationId];
+                        return i;
+                    }
+                }).filter(item=>item!==undefined);
+
+                one.map((val)=>{
+                    val.operationId = val.operationId.join(",")
+                })
+                removeRepeat(two,"menuId")
+                let result = one.concat(two);
+                console.log("result",result);
+
+                let data1 = {
+                        rolePermission:JSON.stringify(result),
+                        roleName:this.name,
+                        remark:this.remark,
+                        isApp:this.synchronizationApp == true ? 1 : 0,
+                        state:0,
+                        level:this.level, 
+                        id:this.detailData.id,
+                    }
+                    console.log(data1);
+                $.ajax({
+                	type: 'post',
+                	url: pageUrl + userPackageName + '/permission/updateRole',
+                	data: {
+                        rolePermission:JSON.stringify(result),
+                        roleName:this.name,
+                        remark:this.remark,
+                        isApp:this.synchronizationApp == true ? 1 : 0,
+                        state:0,
+                        level:this.level, 
+                        userId:sessionStorage.ID,
+                        id:this.detailData.id,
+                    },
+
+                	success: (obj) => {
+                        if(obj.code == 000000){
+                            if(obj.code == 000000){
+                            this.$alert('编辑成功', '提示', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                                window.location.href = "./roles.html"
+                            }
+                        });
+                        }else{
+                            this.$message.error(obj.message);
+                        }
+                        }
+                	},
+                });
+            },
+
+            //菜单列表请求
+            getMenuList() {
+                axios({
+                        method: 'get',
+                        url: pageUrl + userPackageName + "/permission/queryAllMenuList",
+                    })
+                    .then((response) => {
+                        let data = response.data.data; //数据列表
+                        //筛选出APP菜单
+                        this.appMenu = data.filter((val) => {
+                            return val.type == 1;
+                        }) 
+
+                        for (let i = 0; i < data.length; i++) {
+                            for (let j = 0; j < data[i].children.length; j++) {
+                            //  console.log(data[i].children[j]);
+                                for (let m = 0; m < this.twoMenuSelectData.length; m++) {
+                                    if(this.twoMenuSelectData[m] == data[i].children[j].id){
+                                        data[i].children[j].state = true;
+                                    }
+                                    let arr = data[i].children.every(this.checkedAll);
+                                    if(arr == true) data[i].state = true;
+                                }
+                                for (let k = 0; k < data[i].children[j].operationes.length; k++) {
+                                    data[i].children[j].operationes[k].oneMenuId = data[i].id;
+                                    for(let l = 0; l < this.treeMenuSelectData.length; l++){
+                                        if(this.treeMenuSelectData[l] == data[i].children[j].operationes[k].id){
+                                            data[i].children[j].operationes[k].state = true;
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                        this.menuList = data;
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            },
+            
+        },
+
+    })
+</script>
+
+</html>

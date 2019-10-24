@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<fieldset>
+				<div class="form-group">
+					<label class="col-md-2 control-label">内容标题：</label>
+					<div class="col-md-4">
+						<input class="form-control" placeholder="请输入标题" type="text" name="title" id="title" data-bv-notempty="true" data-bv-notempty-message="标题 不能为空">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">内容来源：</label>
+					<div class="col-md-4">
+						<input class="form-control" placeholder="请输入来源" type="text" name="dataSource" id="dataSource" data-bv-notempty="true" data-bv-notempty-message="标题 不能为空">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">内容分类：</label>
+					<div class="col-md-1">
+						<select class="form-control input-sm" id="sourceType" name="sourceType" onchange="selectType();">
+							<option value="1">文章列表图文</option>
+							<option value="2">视频</option>
+							<!-- <option value="3">小视频</option> -->
+							<option value="4">图集</option>
+							<!-- <option value="5">其他</option> -->
+						</select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">所属栏目：</label>
+					<div class="col-md-1">
+						<select class="form-control input-sm" id="module-type" name="moduleType">
+						</select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">是否显示：</label>
+					<div class="col-md-1">
+						<input type="checkbox" id="isShow" checked />
+					</div>
+				</div>
+				<!-- 转发内容默认userid设置为平台账号 -->
+				<input type="hidden" id="userid" name="userId" value="20">
+				<!-- 临时固定 默认创建着用户id -->
+				<input type="hidden" id="createBy" name="createBy" value="20">
+				<div class="form-group">
+					<label class="col-md-2 control-label"></label>
+					<div class="col-md-1">
+						<button type="button" class="layui-btn layui-btn-danger" onclick="exchange()">调换图片位置</button>
+					</div>
+				</div>
+				<!-- 图文 -->
+				<div class="form-group" id="contentDiv" style="display: none;">
+					<label class="col-md-2 control-label">资讯内容</label>
+					<div class="col-md-8">
+						<textarea class="form-control" name="content" id="content" style="display: none"></textarea>
+					</div>
+				</div>
+				<!-- 图集 -->
+				<div id="imagesDiv" style="display: none;">
+					<div class="form-group">
+						<label class="col-md-2 control-label">图集预览：</label>
+						<div class="col-md-8">
+							<div class="layui-upload-list" id="images1"></div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-md-2 control-label"></label>
+						<div class="col-md-8">
+							<button type="button" class="layui-btn" id="testList">
+								<i class="layui-icon">&#xe67c;</i>选择图片(最多4张)
+							</button>
+							<button type="button" class="layui-btn" id="testListAction">开始上传</button>
+						</div>
+					</div>
+				</div>
+				<!-- 视频 -->
+				<div class="form-group" id="videosDiv" style="display: none;">
+					<label class="col-md-2 control-label">视频地址：</label>
+					<div class="col-md-4">
+						<input type="hidden" id="videoId" name="pictRelateId" value="">
+						<!-- 视频id隐藏域 -->
+						<input class="form-control" placeholder="可以填视频地址，也可以上传视频文件生成地址" type="text" id="videoUrl">
+						<button type="button" class="layui-btn" onclick="saveVideoUrl()">保存视频链接</button>
+						<button type="button" class="layui-btn" id="video">
+							<i class="layui-icon"></i>上传视频
+						</button>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">缩略图片预览： </label>
+					<div class="col-md-8">
+						<input type="hidden" id="smlImageId" name="thumbnailRelateId" value="">
+						<div class="layui-upload-list" id="images2"></div>
+					</div>
+				</div>
+
+				<!-- 多图缩略图上传部分 -->
+				<div class="form-group" id="smlImagesDiv" style="display: none;">
+					<label class="col-md-2 control-label"></label>
+					<div class="col-md-8">
+						<button type="button" class="layui-btn" id="smlImages">
+							<i class="layui-icon">&#xe67c;</i>选择缩略图(最多4张)
+						</button>
+						<button type="button" class="layui-btn" id="smlImagesAction">开始上传</button>
+					</div>
+				</div>
+				<!-- 单缩略图上传 -->
+				<div class="form-group" id="smlImageDiv" style="display: none;">
+					<label class="col-md-2 control-label"></label>
+					<div class="col-md-4">
+						<div class="layui-upload">
+							<button type="button" class="layui-btn" id="test1">上传图片</button>
+						</div>
+					</div>
+				</div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" type="submit" onclick="add()" id="save">
+								<i class="fa fa-save"></i> 发布
+							</button>
+							<button class="btn btn-primary" onclick="location.href='articleList.html'">取消</button>
+						</div>
+					</div>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+
+	<script src="../../js/constant.js"></script>
+	<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="../../js/jq.js"></script>
+	<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+	<script type="text/javascript" src="../../js/common.js"></script>
+	<script type="text/javascript" src="../../js/my/permission.js"></script>
+	<script type="text/javascript">
+		var layedit;
+		var editIndex;
+		var userid = getUrlParam("userid");
+		var fid = getUrlParam("id");
+		var imagePreview = $('#images2');
+		var success = 0;
+		var fail = 0;
+		function saveVideoUrl() {
+			$.ajax({
+				type : "POST",
+				url : pageUrl + userPackageName + "/fileInfo/uploadUrlFile",
+				data : {
+					fileUrl : $('#videoUrl').val()
+				},
+				error : function(request) {
+					layer.alert("Connection error");
+				},
+				success : function(result) {
+					if (result.code == "000000") {
+						layer.alert("链接保存成功");
+						$("#videoId").val(result.data.id)
+					} else {
+						layer.alert("链接保存失败");
+					}
+				}
+			});
+		}
+		/*
+		 * 查询所有栏目
+		 */
+		function query() {
+			$.ajax({
+				type : "GET",
+				url : pageUrl + appPackageName + "/discoverColumn/getAllListForBackend",
+				error : function(request) {
+					layer.alert("Connection error");
+				},
+				success : function(result) {
+					for (var i = 0; i < result.length; i++) {
+						$("#module-type").append("<option value="+result[i].id+">" + result[i].columnName + "</option>");
+					}
+				}
+			});
+		}
+		/* 发布后修改转发状态为已发布 */
+		function forwardOpen(dcid) {
+			var params = [];
+			var paramObj = new Object();
+			paramObj.id = parseInt(fid);
+			paramObj.status = 3;
+			paramObj.discoverId = dcid;
+			params.push(paramObj);
+			$.ajax({
+				type : "POST",
+				url : pageUrl + appPackageName + "/forward/backendUpdateBatch",
+				contentType : "application/json; charset=utf-8",
+				data : JSON.stringify(params),
+				dataType : "json",
+				error : function(request) {
+					layer.alert("Connection error");
+				},
+				success : function(result) {
+					layer.alert("添加成功", function() {
+						location.href = "../share/shareList.html";
+					});
+				}
+			});
+		}
+		function add() {
+			//视频id
+			var vid = $("#videoId").val();
+			if (vid == "") {
+				//获取所有的图集进行添加排序序列号
+				$('#images1 tr').each(function(j) {
+					//获取多图隐藏域的现有id
+					var ids = $('#videoId').val();
+					//叠加
+					ids += $(this).find(".img-id").val() + ",";
+					//储存图片id到隐藏域
+					$('#videoId').val(ids);
+				});
+			}
+			//获取所有的缩略图进行添加排序序列号
+			$('#images2 tr').each(function(j) {
+				//获取多图隐藏域的现有id
+				var ids = $('#smlImageId').val();
+				//叠加
+				ids += $(this).find(".img-id").val() + ",";
+				//储存图片id到隐藏域
+				$('#smlImageId').val(ids);
+			});
+			var searchData = $('#form').serializeArray();
+			/* 获取是否显示的checkbox状态 */
+			if ($('#isShow').prop("checked")) {
+				searchData.push({
+					"name" : "isShow",
+					"value" : "0"
+				})
+			} else {
+				searchData.push({
+					"name" : "isShow",
+					"value" : "1"
+				})
+			}
+			searchData.forEach(list=>{
+			  if(list.name==='content'){
+			    list.value =  layedit.getContent(editIndex)
+			  }
+			})
+			$.ajax({
+				type : "POST",
+				url : pageUrl + appPackageName + "/discoverInfo/backendAdd",
+				data : searchData,
+				error : function(request) {
+					layer.alert("Connection error");
+				},
+				success : function(result) {
+					if (result.code = "000000") {
+						if (fid != null && fid != "") {
+							forwardOpen(result.data);
+						} else {
+							saveImgInfo();
+							layer.alert("添加成功", function() {
+								location.href = "articleList.html";
+							});
+						}
+					}
+				}
+			});
+		}
+		/* 根据当前选择的类型改变输入框 */
+		function selectType() {
+			var select = $("#sourceType").val()
+			if (select == 1) {
+				$("#contentDiv").show()
+				$("#imagesDiv").hide()
+				$("#videosDiv").hide()
+				$("#smlImagesDiv").show()
+				$("#smlImageDiv").hide()
+			}
+			if (select == 4) {
+				$("#contentDiv").hide()
+				$("#imagesDiv").show()
+				$("#videosDiv").hide()
+				$("#smlImagesDiv").hide()
+				$("#smlImageDiv").show()
+			}
+			if (select == 2) {
+				$("#contentDiv").hide()
+				$("#imagesDiv").hide()
+				$("#videosDiv").show()
+				$("#smlImagesDiv").hide()
+				$("#smlImageDiv").show()
+			}
+		}
+		/* 批量保存图片描述 */
+		function saveImgInfo() {
+			var imgInfos = [];
+			$('#images1 tr').each(function(j) {
+				var paramObj = new Object();
+				paramObj.id = $(this).find(".img-id").val();
+				paramObj.content = $(this).find("#imgInfo").val();
+				paramObj.sort = j + 1;
+				imgInfos.push(paramObj);
+			});
+			$('#images2 tr').each(function(j) {
+				var paramObj = new Object();
+				paramObj.id = $(this).find(".img-id").val();
+				paramObj.sort = j + 1;
+				imgInfos.push(paramObj);
+			});
+			$.ajax({
+				type : "POST",
+				url : pageUrl + userPackageName + "/fileInfo/batchAddDesc",
+				data : JSON.stringify(imgInfos),
+				dataType : "json",
+				contentType : "application/json; charset=utf-8",
+				error : function(request) {
+					layer.alert("Connection error");
+				},
+				success : function(result) {
+					if (result.code = "000000") {
+					}
+				}
+			});
+		}
+		//图片位置调换
+		function exchange() {
+			var divId;
+			var trArray = [];
+			var trArray1 = [];
+			//获取已选中的checkbox
+			$('td.imageCheckbox input[type=checkbox]:checked').each(function(j) {
+				divId = $(this).parent().parent().parent().attr("id");
+				trArray.push($('#' + $(this).attr("id")));
+			});
+			//获取所有图片的tr
+			$('#'+divId+' input[type=checkbox]').each(function(j) {
+				if ($('#' + $(this).attr("id")).is(trArray[1])) {
+					trArray1.push(trArray[0]);
+				} else if ($('#' + $(this).attr("id")).is(trArray[0])) {
+					trArray1.push(trArray[1]);
+				} else {
+					trArray1.push($('#' + $(this).attr("id")));
+				}
+			});
+			$('#'+divId).html(trArray1);
+		}
+		$(function() {
+			if (userid != "" && userid != null) {
+				$("#userid").val(userid)
+			}
+			selectType();
+			query();
+
+		});
+
+		layui.use([ 'form', 'layedit', 'upload' ], function() {
+			var $ = layui.jquery, upload = layui.upload, form = layui.form, layer = layui.layer;
+			layedit = layui.layedit;
+			/* 富文本 */
+			layedit.set({
+				uploadImage : {
+					url : pageUrl + userPackageName + '/fileInfo/wangEditorFileUpload', //接口url
+					type : 'POST' //默认post
+				}
+			});
+			editIndex = layedit.build('content'); //建立编辑器
+
+			//单图上传
+			var uploadInst = upload.render({
+				elem : '#test1',
+				url : pageUrl + userPackageName + '/fileInfo/compressUpload?height=' + 420 + "&width=" + 750,
+				before : function(obj) {
+					//预读本地文件示例，不支持ie8
+					obj.preview(function(index, file, result) {
+						var tr = $([ '<tr id="upload-'+ index +'">', '<td>', '<img src="' + result + '" alt="' + file.name + '"height="92px" width="92px" class="layui-upload-img uploadImgPreView">', '</td>', '<td style ="padding: 0px 0px 0px 50px;">', '<input type="text" class="img-id" value="" />', '</td>', '</tr>' ].join(''));
+						imagePreview.html(tr);
+					});
+				},
+				done : function(res, index) {
+					if (res.code == "0") {
+						var tr = imagePreview.find('tr#upload-' + index), 
+						tds = tr.children();
+						tr.find(".img-id").val(res.data.id)
+						tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
+					} else {
+						layer.alert("图片上传失败");
+					}
+				},
+				error : function() {
+					//演示失败状态，并实现重传
+					var demoText = $('#demoText');
+					demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+					demoText.find('.demo-reload').on('click', function() {
+						uploadInst.upload();
+					});
+				}
+			});
+
+			/* 视频上传 */
+			upload.render({
+				elem : '#video',
+				url : pageUrl + userPackageName + '/fileInfo/fileUpload',
+				accept : 'video' //视频
+				,
+				done : function(res) {
+					if (res.code == 000000) { //上传成功
+						//储存图片id到隐藏域
+						$('#videoId').val(res.data.id);
+						$('#videoUrl').val(res.data.fullPath);
+					}
+				}
+			});
+
+			//多文件列表示例
+			var demoListView = $('#images1'), uploadListIns = upload.render({
+				elem : '#testList',
+				url : pageUrl + userPackageName + '/fileInfo/wangEditorFileUpload',
+				accept : 'file',
+				multiple : true,
+				auto : false,
+				bindAction : '#testListAction',
+				choose : function(obj) {
+					var files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
+					//读取本地文件
+					obj.preview(function(index, file, result) {
+						//var imageSort = $('#images1').children().length;
+						var tr = $([ '<tr id="upload-'+ index +'">', '<td>', '<img src="' + result + '" alt="' + file.name + '"height="92px" width="92px" class="layui-upload-img uploadImgPreView">', '<button class="layui-btn layui-btn-xs demo-reload layui-hide">重传</button>', '</td>', '<td style ="padding: 0px 0px 0px 50px;">', '<input class="form-control" style = "height:92px;width:300px" placeholder="请输入图片描述" type="text" id="imgInfo">', '</td>', '<td style ="padding: 0px 0px 0px 50px;">',
+								'<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete">删除</button>', '</td>', '<td style ="padding: 0px 0px 0px 50px;">', '<input type="text" class="img-id" value="" />', '</td>', '<td style ="padding: 0px 0px 0px 50px;" class="imageCheckbox">', '<input type="checkbox" id="upload-'+ index +'"/>', '</td>', '</tr>' ].join(''));
+						//单个重传
+						tr.find('.demo-reload').on('click', function() {
+							obj.upload(index, file);
+						});
+						//删除
+						tr.find('.demo-delete').on('click', function() {
+							delete files[index]; //删除对应的文件
+							tr.remove();
+							uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
+						});
+						demoListView.append(tr);
+					});
+				},
+				done : function(res, index, upload) {
+					if (res.code == "0") { //上传成功
+						/* 上传成功后保存图片id和描述到map */
+						var tr = demoListView.find('tr#upload-' + index), tds = tr.children();
+						tr.find(".img-id").val(res.data.id)
+						success++;
+						tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
+						//tds.eq(3).html(''); //清空操作
+						return delete this.files[index]; //删除文件队列已经上传成功的文件
+					}
+					this.error(index, upload);
+				},
+				error : function(index, upload) {
+					var tr = demoListView.find('tr#upload-' + index), tds = tr.children();
+					tds.eq(2).html('<span style="color: #FF5722;">上传失败</span>');
+					tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
+				},
+				allDone : function(obj) {
+					layer.msg("总共要上传图片总数为：" + (fail + success) + "\n" + "其中上传成功图片数为：" + success + "\n" + "其中上传失败图片数为：" + fail)
+				}
+			});
+
+			/* 缩略图上传 */
+			var demoListView2 = $('#images2'), uploadListIns = upload.render({
+				elem : '#smlImages',
+				url : pageUrl + userPackageName + '/fileInfo/compressUpload?height=' + 151 + "&width=" + 226,
+				accept : 'file',
+				multiple : true,
+				auto : false,
+				bindAction : '#smlImagesAction',
+				choose : function(obj) {
+					var files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
+					//读取本地文件
+					obj.preview(function(index, file, result) {
+						var tr = $([ '<tr id="upload-'+ index +'">', '<td>', '<img src="' + result + '" alt="' + file.name + '"height="92px" width="92px" class="layui-upload-img uploadImgPreView">', '<button class="layui-btn layui-btn-xs demo-reload layui-hide">重传</button>', '</td>', '<td style ="padding: 0px 0px 0px 50px;">', '<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete">删除</button>', '</td>', '<td style ="padding: 0px 0px 0px 50px;">',
+								'<input type="text" class="img-id" value="" />', '</td>', '<td style ="padding: 0px 0px 0px 50px;" class="imageCheckbox">', '<input type="checkbox" id="upload-'+ index +'"/>', '</td>', '</tr>' ].join(''));
+						//单个重传
+						tr.find('.demo-reload').on('click', function() {
+							obj.upload(index, file);
+						});
+						//删除
+						tr.find('.demo-delete').on('click', function() {
+							delete files[index]; //删除对应的文件
+							tr.remove();
+							uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
+						});
+
+						demoListView2.append(tr);
+					});
+				},
+				done : function(res, index, upload) {
+					if (res.code == 0) { //上传成功
+						/* 上传成功后保存图片id和描述到map */
+						var tr = demoListView2.find('tr#upload-' + index), tds = tr.children();
+						tr.find(".img-id").val(res.data.id)
+						success++;
+						tds.eq(1).html('<span style="color: #5FB878;">上传成功</span>');
+						return delete this.files[index]; //删除文件队列已经上传成功的文件
+					}
+					this.error(index, upload);
+				},
+				error : function(index, upload) {
+					var tr = demoListView2.find('tr#upload-' + index), tds = tr.children();
+					tds.eq(2).html('<span style="color: #FF5722;">上传失败</span>');
+					tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
+				},
+				allDone : function(obj) {
+					layer.msg("总共要上传图片总数为：" + (fail + success) + "\n" + "其中上传成功图片数为：" + success + "\n" + "其中上传失败图片数为：" + fail)
+				}
+			});
+		});
+	</script>
+</body>
+</html>

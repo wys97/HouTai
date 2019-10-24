@@ -1,0 +1,357 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+    <link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="../../layui/css/layui.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="../../js/laypage/1.3/skin/laypage.css">
+  <script src="https://unpkg.com/vue/dist/vue.js"></script>
+<body>
+    <div id="app" style="margin:10px 20px 0 20px">
+            <form class="layui-form layui-form-pane" action="" >
+                <h4>添加一级菜单</h4>
+                    <div class="layui-form-item">
+                      <label class="layui-form-label">菜单名称</label>
+                      <div class="layui-input-block">
+                        <input type="text" name="menuName" required  lay-verify="required" placeholder="请输入菜单名称" autocomplete="off" class="layui-input">
+                      </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">排序</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="sort" required  lay-verify="required" placeholder="请输入菜单排序" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">菜单URL</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="menuUrl" required  lay-verify="required" placeholder="请输入菜单URL" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    
+                    <div class="layui-form-item">
+                      <label class="layui-form-label">状态</label>
+                      <div class="layui-input-block">
+                            <input type="checkbox" name="state" value="true" lay-skin="switch" lay-text="开启|关闭">
+                      </div>
+                    </div>
+                    <div class="layui-form-item">
+  
+
+                    <div class="layui-form-item">
+                      <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="formDemo">立即提交</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                      </div>
+                    </div>
+                  </form>
+
+                  <form action="" class="layui-form layui-form-pane">
+                    <div>
+                      <span>二级菜单</span><button class="layui-input-block layui-btn layui-btn-normal">添加二级菜单</button>
+                      </div> 
+                      <label class="layui-form-label">菜单名称</label>
+                      <div class="layui-input-block">
+                        <input type="text" name="menuName2" required  lay-verify="required" placeholder="请输入菜单名称" autocomplete="off" class="layui-input">
+                      </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">排序</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="sort2" required  lay-verify="required" placeholder="请输入菜单排序" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">菜单URL</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="menuUrl2" required  lay-verify="required" placeholder="请输入菜单URL" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    
+                    <div class="layui-form-item">
+                      <label class="layui-form-label">状态</label>
+                      <div class="layui-input-block">
+                            <input type="checkbox" name="state2" value="true" lay-skin="switch" lay-text="开启|关闭">
+                      </div>
+                    </div>
+                   
+                  </form>
+    </div>
+</body>
+
+<script src="../../layui/layui.js" charset="utf-8"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script>
+      layui.use('form', function(){
+  var form = layui.form;
+  
+  //监听提交
+  form.on('submit(formDemo)', function(data){
+      
+        console.log(JSON.stringify(data.field))
+        let parm = data.field
+        parm.state === undefined ? parm.state = false : parm.state = true 
+        console.log(parm)
+        
+          
+    return false;
+  });
+
+
+
+});
+  let app = new Vue({
+    el:'#app',
+    data:{
+    
+    },
+    methods: {
+      
+    },
+    updated: function () {
+			layui.use('form', function() {
+	            var form = layui.form;
+	            form.render();
+	        });
+		}
+  })
+  layui.use('form', function(){
+  var form = layui.form;
+  
+  //监听提交
+});
+ -->
+
+
+
+<!-- </script>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="../../css/elementUI.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+</head>
+<!-- 引入样式 -->
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<script src="../../js/elemenyUI.js"></script>
+<!-- 引入组件库 -->
+<style>
+	.formSubmitBox {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.userAddText {
+		text-align: center;
+		margin: 15px 0;
+	}
+
+	.btn {
+		position: relative;
+		left: 20px;
+		top: 5px;
+		cursor: pointer;
+	}
+
+	.text {
+		font-size: 14px;
+	}
+
+	.item {
+		padding: 18px 0;
+	}
+
+	.box-card {
+		width: 400px;
+	}
+
+	.font{
+		font-size: 14px;
+    	color: #606266;
+	}
+</style>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<h3>添加一级菜单</h3>
+			<el-form :label-position="labelPosition" label-width="80px" :model="form">
+				<el-form-item label="菜单名称">
+					<el-input v-model="form.name"></el-input>
+				</el-form-item>
+				<el-form-item label="排序">
+					<el-input v-model="form.sort"></el-input>
+				</el-form-item>
+				<el-form-item label="菜单URL">
+					<el-input v-model="form.url"></el-input>
+				</el-form-item>
+				<el-form-item label="状态">
+					<el-switch v-model="form.state" active-text="开启" inactive-text="关闭">
+					</el-switch>
+				</el-form-item>
+				<span>二级菜单</span>
+				<el-button @click='addTwoMenu' type="primary" plain>添加二级菜单</el-button>
+				<el-form-item label="菜单名称">
+					<el-input v-model="name"></el-input>
+				</el-form-item>
+				<el-form-item label="排序">
+					<el-input v-model="sort"></el-input>
+				</el-form-item>
+				<el-form-item label="菜单URL">
+					<el-input v-model="url"></el-input>
+				</el-form-item>
+				<el-form-item label="状态">
+					<el-switch v-model="state" active-text="开启" inactive-text="关闭">
+					</el-switch>
+				</el-form-item>
+				<div>
+					<el-card class="box-card" v-for="(item,index) in twoMenu1" :key="index"
+						style="margin-left: 20px;float: left; width: 200px">
+						<div slot="header" class="clearfix">
+							<span>{{item.name}}</span>
+							<el-button @click='delTwoMenu1(index)' style="float: right; padding: 3px 0;color: red" type="text">删除
+							</el-button>
+						</div>
+						<div class="text item">
+							<!-- <div>菜单名称:{{item.name}}</div> -->
+							<div>排序:{{item.sort}}</div>
+							<div>菜单URL:{{item.url}}</div>
+							<div>状态:<el-switch :value='item.state' active-text="开启" inactive-text="关闭">
+								</el-switch>
+							</div>
+						</div>
+					</el-card>
+				</div>
+
+				<div style="clear: both;">
+					<h3>控制功能</h3>
+					<!-- <el-button @click='addFunction' type="text" plain>添加二级菜单</el-button> -->
+					<div style="height: 55px">
+						<span>功能名称</span>
+						<el-input style="width:300px" v-model="functitonName" placeholder="请填写功能名称"></el-input>
+						<span style="margin-left: 130px">链接目标</span>
+						<el-input style="width:300px" v-model="urlTarget" placeholder="请填写链接目标"></el-input>
+
+						<img src="../../img/logo/加1.png" class="btn" @click='addFunction' alt="">
+						
+						<div>
+
+						</div>
+					</div>
+
+					<el-card class="box-card" v-for="(item,index) in funcitonData" :key="index" style="float: left;margin: 20px">
+						<span class="font">功能名称:{{item.name}}</span>
+						<span style="margin-left:50px" class="font">链接目标:{{item.url}}</span>
+						<img src="../../img/logo/减.png" class="btn" @click='del(index)' alt="">
+					</el-card>
+
+					<div class="formSubmitBox" style="clear: both;">
+						<el-button type="primary" @click="onSubmit">立即创建</el-button>
+						<el-button @click="goBack">返回</el-button>
+					</div>
+				</div>
+			</el-form>
+		</div>
+		<div>
+
+		</div>
+	</div>
+</body>
+<script>
+	new Vue({
+		el: "#app",
+		data: {
+			functitonName: '',
+			urlTarget: '',
+			name: '',
+			sort: '',
+			url: '',
+			state: true,
+
+			labelPosition: 'right',
+			form: {
+				name: '',
+				sort: '',
+				url: '',
+				state: true,
+				twoMenu: {
+					twoName: '',
+					twoSort: '',
+					twoUrl: '',
+					twoState: true
+				}
+			},
+			funcitonData: [],
+			twoMenu1: []
+		},
+		methods: {
+			addMenuFromCancel() {
+				this.addMenuFlag = false;
+			},
+
+			// 添加菜单提交按钮
+			onSubmit() {
+				// console.log('添加菜单按钮提交', this.form);
+			},
+			// 添加二级菜单
+			addTwoMenu() {
+				// console.log(this.form.twoMenu)
+				let param = {
+					name: this.name,
+					sort: this.sort,
+					url: this.url,
+					state: this.state
+				};
+				this.twoMenu1.push(param)
+
+				this.name = '';
+				this.sort = '';
+				this.url = '';
+				this.state = true;
+			},
+			// 控制功能添加
+			addFunction() {
+				let param = {
+					name: this.functitonName,
+					url: this.urlTarget
+				}
+				this.funcitonData.push(param)
+				this.functitonName = ''
+				this.urlTarget = ''
+			},
+			// 删除单个控制功能
+			del(index) {
+				this.funcitonData.splice(index, 1)
+			},
+			// 删除单个二级菜单
+			delTwoMenu1(index) {
+				this.twoMenu1.splice(index, 1)
+			},
+			goBack() {
+				window.location.href = './menu.html'
+			},
+			// 删除单个已添加的控制功能
+			delFuncitonData(index){
+
+			}
+		},
+	})
+</script>
+
+</html>

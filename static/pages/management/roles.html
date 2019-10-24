@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<!-- 引入样式 -->
+<link rel="stylesheet" href="../../css/elementUI.css">
+<link rel="stylesheet" href="../../css/elementUItheme/button.css">
+<link rel="stylesheet" href="../../css/elementUItheme/pagination.css">
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/axios.min.js"></script>
+<script src="../../js/common.js"></script>
+<style>
+    [v-cloak] {
+        opacity: 0;
+    }
+
+    .formSubmitBox {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .el-table__row--level-1 {
+        background-color: oldlace !important;
+    }
+
+    .font {
+        font-size: 0.28rem;
+        color: #606266;
+    }
+
+    .btn {
+        position: relative;
+        left: 0.2rem;
+        top: 0.1rem;
+        cursor: pointer;
+    }
+    .box-card {
+    width: 480px;
+  }
+</style>
+
+<body>
+    <div id="app" v-cloak>
+            <el-button plain @click="addUser" style="border-color: #1aa094;background:#1AA094;color: white;margin-bottom: 10px;">添加角色</el-button>
+        <el-table v-loading="loading" :data="tableData" style="width: 100%" :data="tableData"
+            style="width: 100%;margin-bottom: 0.4rem;" border row-key="id">
+            <el-table-column prop="roleName" label="角色" width="280"> </el-table-column>
+            <el-table-column prop="level" label="角色等级" width="120"> </el-table-column>
+            <el-table-column prop="remark" label="职能描述"> </el-table-column>
+            <el-table-column prop="createTime" label="添加时间" width="200"> </el-table-column>
+            <el-table-column prop="userNum" label="成员数" width="120"> </el-table-column>
+            <el-table-column prop="state" label="状态" width="160"> </el-table-column>
+            <el-table-column prop="" label="操作" width="280">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="edit(scope.row)">编辑</el-button>
+                    <el-button type="text" @click="detail(scope.row)">详情</el-button>
+                    <el-button type="text" @click="del(scope.row)" v-if="scope.row.userNum == 0">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination layout="prev, pager, next" :total="total" @current-change="change"></el-pagination>
+    </div>
+</body>
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            name:"",
+            remark:"",
+            total:0,   //总数据条数
+            pageIndex: 1,
+            pageSize: 10,
+            detailFlag:false,
+            tableData: [],              //表格显示总数据
+            detailData:{},              //详情列表数据
+            addRoleFlag:false,          //添加角色弹窗
+            editRoleFlag:false,         //编辑角色弹窗
+            innerAddRoleFlag:false,     //添加角色的子弹窗
+            appMenu:[],                 //app菜单列表
+            menuList:[],                //菜单列表
+            synchronizationApp: false,  //同步APP
+            defaultProps: {
+                children: 'children',
+                label: 'menuName'
+            },
+            detailData:{},              //用户详情数据
+            select:[],                  //默认选中的选择框
+            firstMenuArr:[],
+            level:"",                   //角色等级
+        },
+        methods: {
+            //详情按钮
+            detail(e) {
+                window.location.href = `./userDetail.html?id=${e.id}`
+            },
+            // 编辑
+            edit(e) {
+                window.location.href = `./editUser.html?id=${e.id}`
+            },
+
+            //删除
+            del(e){
+                // console.log(e);
+                this.$confirm('是否删除该角色？', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+                }).then(() => {
+                axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName + `/permission/deleteRole?id=${e.id}`,
+                })
+                .then((response) => {
+                        this.$message({
+                        type: 'success',
+                        message: '删除成功!'
+                    });
+                    // console.log(response);
+                    this.refresh();
+                    })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });          
+                });
+            },
+
+            //添加角色
+            addUser(){
+                window.location.href='./addUser.html'
+            },
+            change(e){
+                this.loading = true;
+                axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName +  `/permission/queryRoleList?pageIndex=${e}&pageSize=${this.pageSize}`,
+                })
+                .then((response) => {
+                    let data = response.data.rows;
+                    data.map(value => {
+                        value.state === 0 ? value.state = "正常" : value.state = "禁用";
+                    });
+                    this.tableData = data;
+                    this.loading = false;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+
+            refresh(){
+                axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName +
+                        `/permission/queryRoleList?pageIndex=${this.pageIndex}&pageSize=${this.pageSize}`,
+                })
+                .then((response) => {
+                    let data = response.data.rows;
+                    data.map(value => {
+                        value.state === 0 ? value.state = "正常" : value.state = "禁用";
+                    });
+                    this.tableData = data;
+                    this.total = response.data.total;
+                    this.loading = false;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+        },
+        created() {
+            this.loading = true;
+            let children = [];
+            axios({
+                    method: 'get',
+                    url: pageUrl + userPackageName + `/permission/queryRoleList?pageIndex=${this.pageIndex}&pageSize=${this.pageSize}`,
+                })
+                .then((response) => {
+                    let data = response.data.rows;
+                    data.map(value => {
+                        value.state === 0 ? value.state = "正常" : value.state = "禁用";
+                    });
+                    this.tableData = data;
+                    this.total = response.data.total;
+                    this.loading = false;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        },
+    })
+</script>
+
+</html>

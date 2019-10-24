@@ -1,0 +1,434 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="../../js/vuejs/2.6.10/vue.js"></script>
+    <script src="../../js/axios.min.js"></script>
+    <link rel="stylesheet" href="../../css/elementUI.css">
+    <link rel="stylesheet" href="../../css/newstyle.css">
+    <!-- 引入组件库 -->
+    <script src="../../js/elemenyUI.js"></script>
+    <script src="../../js/constant.js"></script>
+    <script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="../../js/common.js"></script>
+</head>
+<style>
+    .disabled .el-upload--picture-card {
+        display: none;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    [v-cloak] {
+        opacity: 0;
+    }
+</style>
+
+<body>
+    <div id="app" v-cloak>
+        <el-form style="display: inline-block" :rules="rules" ref="form" :model="form" label-width="115px">
+            <el-form-item label="门店名称" prop="storeName">
+                <el-input v-model="form.storeName" maxlength="20"></el-input>
+            </el-form-item>
+             <el-form-item label="联系电话" prop="storePhoneNumber">
+                <el-input v-model="form.storePhoneNumber" type="number" oninput="if(value.length>11)value=value.slice(0,11)"></el-input>
+            </el-form-item>
+            <el-form-item label="收银方式" prop="feeType">
+                <el-radio-group v-model="form.feeType">
+                    <el-radio :label="1">点餐买单</el-radio>
+                    <el-radio :label="2">输入金额买单</el-radio> 
+                    <!-- <el-radio :label="3">兼容两种模式</el-radio> -->
+                </el-radio-group>
+            </el-form-item>
+             <el-form-item label="所在城市" prop="storeCity">
+                <el-select v-model="form.storeCity" filterable placeholder="请选择所在城市">
+                    <el-option v-for="item in cityList" :key="item.codeC" :label="item.name" :value="item.codeC">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="供餐时间段1">
+                <el-time-picker :editable="false" v-model="foodTime1_1" @change="changeFoodTime1_1" value-format="HH:mm:ss" placeholder="选择开始时间"></el-time-picker>
+                <el-time-picker :editable="false" v-model="foodTime1_2" @change="changeFoodTime1_2" value-format="HH:mm:ss" placeholder="选择结束时间"></el-time-picker>
+            </el-form-item>
+            <el-form-item label="供餐时间段2">
+                <el-time-picker :editable="false" v-model="foodTime2_1" @change="changeFoodTime2_1" value-format="HH:mm:ss" placeholder="选择开始时间"></el-time-picker>
+                <el-time-picker :editable="false" v-model="foodTime2_2" @change="changeFoodTime2_2" value-format="HH:mm:ss" placeholder="选择结束时间"></el-time-picker>
+            </el-form-item>
+            <el-form-item label="供餐时间段3">
+                <el-time-picker :editable="false" v-model="foodTime3_1" @change="changeFoodTime3_1" value-format="HH:mm:ss" placeholder="选择开始时间"></el-time-picker>
+                <el-time-picker :editable="false" v-model="foodTime3_2" @change="changeFoodTime3_2" value-format="HH:mm:ss" placeholder="选择结束时间"></el-time-picker>
+            </el-form-item>
+            <el-form-item label="供餐时间段4">
+                <el-time-picker :editable="false" v-model="foodTime4_1" @change="changeFoodTime4_1" value-format="HH:mm:ss" placeholder="选择开始时间"></el-time-picker>
+                <el-time-picker :editable="false" v-model="foodTime4_2" @change="changeFoodTime4_2" value-format="HH:mm:ss" placeholder="选择结束时间"></el-time-picker>
+            </el-form-item>
+            <el-form-item label="纬度" prop="latitude">
+                <el-input v-model="form.latitude" type="number" oninput="if(value.length>15)value=value.slice(0,15)">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="经度" prop="longitude">
+                <el-input v-model="form.longitude" type="number" oninput="if(value.length>15)value=value.slice(0,15)" maxlength="15">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="详细地址" prop="storeAddress">
+                <el-input type="textarea" autosize :rows="1" maxlength="30" placeholder="请输入详细地址" v-model="form.storeAddress">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="配送费" prop="shippingFee">
+                <el-input v-model="form.shippingFee" type="number" maxlength="5" >
+                    <template slot="append">元</template>
+                </el-input>
+            </el-form-item>
+            <el-form-item label="备注">
+                <el-input type="textarea" autosize :rows="1" maxlength="30" placeholder="请输入备注" v-model="form.remark"></el-input>
+            </el-form-item>
+            <el-form-item label="门店头图" prop="storeUrl" ref="storeUrlRule">
+  				<el-upload ref="storeBigImgRef" :limit=1 list-type="picture-card" :on-success="storeBigImgupdateSuccess" accept="image/jpeg,image/png" :on-exceed="addBigImgLimit" :before-upload="onBeforeUpload" :action="action">
+					<i class="el-icon-plus"></i>
+				  </el-upload>
+            </el-form-item>
+            <el-form-item label="门店详情图片" prop="storeImg" ref="image">
+  				<el-upload ref="uploada" multiple :limit=4 list-type="picture-card" :on-success="storeImgUpdateSuccess" accept="image/jpeg,image/png" :on-exceed="addMenuDetailImgLimit" :before-upload="onBeforeUpload" :action="action">
+					<i class="el-icon-plus"></i>
+				  </el-upload>
+            </el-form-item>
+            <div style="margin-left:100px">
+                <el-button type="primary" @click="onSubmit('form')" :loading="subLoading">立即创建</el-button>
+                <el-button style="margin-left: 30px" @click="back">返回</el-button>
+            </div>
+        </el-form>
+    </div>
+</body>
+<script>
+    new Vue({
+        el: "#app",
+        data() {
+            let checkShippingFee = (rule, value, callback) => {
+                if(!value) {
+                    callback(new Error('请填写金额'))
+                } else if(/^ +$/gi.test(value)) {
+                    callback(new Error('金额不能为纯空格'))
+                } else if(! /^(([1-9]\d*)|\d)(\.\d{1,2})?$/gi.test(value)) {
+                    callback(new Error('不允许输入特殊字符'))
+                } else {
+                    callback();
+                }
+            }
+
+            let checkLongitude = (rule, value, callback) => {
+                if(!value) {
+                    callback(new Error('请填写经度'))
+                } else if(/^ +$/gi.test(value)) {
+                    callback(new Error('经度不能为纯空格'))
+                } else if(!/^\d+(\.\d+)?$/gi.test(value)) {
+                    callback(new Error('不允许输入特殊字符'))
+                } else {
+                    callback()
+                }
+            }
+
+            let checkLatitude = (rule, value, callback) => {
+                if(!value) {
+                    callback(new Error('请填写纬度'))
+                } else if(/^ +$/gi.test(value)) {
+                    callback(new Error('纬度不能为纯空格'))
+                } else if(!/^\d+(\.\d+)?$/gi.test(value)) {
+                    callback(new Error('不允许输入特殊字符'))
+                } else {
+                    callback()
+                }
+            }
+
+            let storeUrl = (rule, value, callback) => {
+                console.log(this.$refs.storeBigImgRef);
+                console.log(this.$refs.storeBigImgRef.uploadFiles);
+                if(this.$refs.storeBigImgRef.uploadFiles.length == 0) {
+                    callback(new Error('请选择门店头图'))
+                }else{
+                    callback();
+                }
+            }
+            return {
+                subLoading:false,
+                dialogImageUrl: '',
+                dialogVisible: false,
+                cityList: [],
+                fileList:[],
+                limit: 4,
+                action: `${pageUrl}${userPackageName}/fileInfo/wangEditorFileUpload`,
+                foodTime1_1:"",
+                foodTime1_2:"",
+                foodTime2_1:"",
+                foodTime2_2:"",
+                foodTime3_1:"",
+                foodTime3_2:"",
+                foodTime4_1:"",
+                foodTime4_2:"",
+                form: {
+                    storeName: '', //取餐点名称
+                    storeCity: '', //取餐点城市编码
+                    storeAddress: "", //地址
+                    storePhoneNumber: '', //电话号码
+                    feeType: 1,
+                    foodTime1: "", //供餐时间1
+                    foodTime2: "", //供餐时间2
+                    foodTime3: "", //供餐时间3
+                    foodTime4: "", //供餐时间4
+                    longitude: "", //经度
+                    latitude: "", //纬度
+                    remark: "", //备注
+                    storeImg: "", //图片ID
+                    userId:sessionStorage.ID,
+
+                    storeUrl:"", //商品大图URL
+                    isdel: "1", //1-正常 0-删除
+
+                    status: "1", //1-上架 0-下架
+                    shippingFee: "", //配送费
+                    provideStyle: "1" //1为堂食， 2为外带
+                },
+                rules: {
+                    storeName: [{
+                        required: true,
+                        message: '请输入门店名称',
+                        trigger: 'blur'
+                    }],
+                    storePhoneNumber: [{
+                        required: true,
+                        trigger: 'blur',
+                        message: '请输入正确的手机号码'
+                    }, {
+                        min: 11,
+                        message: '手机号码长度必须为11位',
+                    }],
+                    feeType: [{
+                        required: true,
+                        message: '请选择收银方式',
+                        trigger: 'change'
+                    }],
+                    storeCity: [{
+                        required: true,
+                        message: '请选择所在城市',
+                        trigger: 'change'
+                    }],
+                    // foodTime1_2: [{
+                    //     required: true,
+                    //     message: '请输入至少选择一个供餐时间段',
+                    //     trigger: 'blur'
+                    // }],
+                    longitude: [{
+                        required: true,
+                        message: '请输入正确的经度',
+                        trigger: 'blur'
+                    },{validator:checkLongitude,trigger: 'blur'}],
+                    latitude: [{
+                        required: true,
+                        message: '请输入正确的纬度',
+                        trigger: 'blur'
+                    },{validator:checkLatitude,trigger: 'blur'}],
+                    shippingFee: [{
+						// type:"number",
+						// min:0.01,
+                        required: true,
+                        message: '请输入正确的配送费金额',
+                        trigger: 'blur'
+                    },{validator:checkShippingFee,trigger: 'blur'}],
+                    storeAddress: [{
+                        required: true,
+                        message: '请输入详细地址',
+                        trigger: 'blur'
+                    }],
+                    storeUrl:[{
+                        required: true,
+                        message: '请选择门店头图',
+                        trigger: 'blur,change'
+                    }],
+                    storeImg: [{
+                        required: true,
+                        message: '请选择门店详情图片',
+                        trigger: 'blur,change'
+                    }]
+                }
+            }
+        },
+        methods: {
+            onSubmit(formName) {
+                if(this.foodTime1_1 == "" && this.foodTime1_2 == ""){
+                    this.$message.error("请输入正确的供餐时间");return  
+                }
+                if((this.foodTime1_1 == "" && this.foodTime1_2 != "") || (this.foodTime1_1 != "" && this.foodTime1_2 == "")){
+                    this.$message.error("请输入正确的供餐时间");return
+                }else if(this.foodTime1_1 != "" && this.foodTime1_2 != ""){
+                    this.form.foodTime1 = `${this.foodTime1_1} - ${this.foodTime1_2}`
+                }
+                if((this.foodTime2_1 == "" && this.foodTime2_2 != "") || (this.foodTime2_1!= "" && this.foodTime2_2 == "")){
+                    this.$message.error("请输入正确的供餐时间");return
+                }else if(this.foodTime2_1 != "" && this.foodTime2_2 != ""){
+                    this.form.foodTime2 = `${this.foodTime2_1} - ${this.foodTime2_2}`
+                }
+                if((this.foodTime3_1 == "" && this.foodTime3_2 != "") || (this.foodTime3_1!= "" && this.foodTime3_2 == "")){
+                    this.$message.error("请输入正确的供餐时间");return
+                }else if(this.foodTime3_1 != "" && this.foodTime3_2 != ""){
+                    this.form.foodTime3 = `${this.foodTime3_1} - ${this.foodTime3_2}`
+                }
+                if((this.foodTime4_1 == "" && this.foodTime4_2 != "") || (this.foodTime4_1!= "" && this.foodTime4_2 == "")){
+                    this.$message.error("请输入正确的供餐时间");return
+                }else if(this.foodTime4_1 != "" && this.foodTime4_2 != ""){
+                    this.form.foodTime4 = `${this.foodTime4_1} - ${this.foodTime4_2}`
+                }
+                //门店图ID拼接到参数中
+                let storeImg = [];
+				this.$refs.uploada.uploadFiles.map((val) =>{
+					storeImg.push(val.response.data.id);
+				})
+                //门店大图URL拼到参数中
+                let storeUrl = [];
+                this.$refs.storeBigImgRef.uploadFiles.map((val) =>{
+					storeUrl.push(val.response.data.src);
+				})
+                this.form.storeUrl = storeUrl.join();
+				this.form.storeImg = storeImg.join(" ");
+				this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        // this.subLoading = true;
+                        let data = Object.assign({}, this.form);
+                            axios({
+                                method: 'POST',
+                                url: pageUrl + eatPackageName + "/storeManager/insertFoodStoreInfo",
+                                params:data
+                            })
+                            .then((response) => {
+                                if (response.data.code === "000000") {
+                                    this.subLoading = false;
+                                    this.$alert('添加门店成功', "提示", {
+                                        confirmButtonText: '确定',
+                                        callback: action => {
+                                            location.href = "./foodStoreInfo.html"
+                                        }
+                                    });
+                                } else {
+                                    this.subLoading = false
+                                    this.$message.error(response.data.message)
+                                }
+                            })
+                            .catch(function (error) {
+                            });
+                    }
+                });
+            },
+
+            //图片上传之前处理 可共用
+            onBeforeUpload(file) {
+			const isIMAGE = file.type === 'image/jpeg'||'image/png';
+			const isLt1M = file.size / 1024 / 1024 < 1;
+			if (!isIMAGE) {
+				this.$message.error('上传文件只能是图片格式!');
+			}
+			if (!isLt1M) {
+				this.$message.error('上传文件大小不能超过 1MB!');
+			}
+				return isIMAGE && isLt1M;
+			},
+
+            //详情图片超出数量 
+            addMenuDetailImgLimit(files, fileList) {
+                if (files.length > 4) {
+                    this.$message.error("最多只能上传四张图片")
+                }
+                if (fileList.length >= 4) {
+                    this.$message.error("最多只能上传四张图片")
+                }
+            },
+
+            //门店大图图片超出数量
+            addBigImgLimit(files, fileList) {
+                if (files.length > 1) {
+                    this.$message.error("最多只能上传一张图片")
+                }
+                if (fileList.length >= 1) {
+                    this.$message.error("最多只能上传一张图片")
+                }
+            },
+            //门店图片上传后清除校验规则
+            storeImgUpdateSuccess(res, file, fileList) {
+                this.$refs.image.clearValidate();
+            },
+
+            //门店大图上传后清除校验规则
+            storeBigImgupdateSuccess(res, file, fileList) {
+                this.$refs.storeUrlRule.clearValidate();
+            },
+
+            back() {
+                location.href = "./foodStoreInfo.html"
+            },
+            changeFoodTime1_1(e){
+                if(e == null){
+                    this.foodTime1_1 = ""
+                }
+            },
+            changeFoodTime1_2(e){
+                if(e == null){
+                    this.foodTime1_2 = ""
+                }
+            },
+            changeFoodTime2_1(e){
+                if(e == null){
+                    this.foodTime2_1 = ""
+                }
+            },
+            changeFoodTime2_2(e){
+                if(e == null){
+                    this.foodTime2_2 = ""
+                }
+            },
+            changeFoodTime3_1(e){
+                if(e == null){
+                    this.foodTime3_1 = ""
+                }
+            },
+            changeFoodTime3_2(e){
+                if(e == null){
+                    this.foodTime3_2 = ""
+                }
+            },
+            changeFoodTime4_1(e){
+                if(e == null){
+                    this.foodTime4_1 = ""
+                }
+            },
+            changeFoodTime4_2(e){
+                if(e == null){
+                    this.foodTime4_2 = ""
+                }
+            },
+
+        },
+        created() {
+            axios({
+                    method: 'post',
+                    url: pageUrl + eatPackageName + `/city/getCityAll`,
+                })
+
+                .then((response) => {
+                    this.cityList = response.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        },
+    })
+</script>
+
+</html>

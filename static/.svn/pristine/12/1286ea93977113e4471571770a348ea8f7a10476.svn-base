@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Insert title here</title>
+	<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+	<!-- <link rel="stylesheet" type="text/css" media="screen" href="../../css/dataTables.bootstrap.min.css"> -->
+	<link rel="stylesheet" type="text/css" media="screen" href="../../layui/css/layui.css">
+	<link rel="stylesheet" type="text/css" media="screen" href="../../js/laypage/1.3/skin/laypage.css">
+	<link rel="stylesheet" href="../../css/newstyle.css">
+	<!-- 必须放顶部否则找不到vue参数 -->
+	<script type="text/javascript" src="../../js/vuejs/1.0.26/vue.min.js"></script>
+	<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+</head>
+<style>
+	.box {
+		width: 100%;
+		height: 30px;
+		margin-bottom: 20px;
+		display: -webkit-flex;
+		display: flex;
+	}
+
+	.nowrap {
+		flex-wrap: nowrap;
+	}
+</style>
+
+<body id="app">
+	<div>
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+			<header style="height: 100%">
+				<div align="left">
+					<table style="width: 100%">
+						<tr>
+							<td>
+								<form id="search-form" class="form-inline" onsubmit="return false">
+									<input type="hidden" id="id" name="id" />
+									<div style="min-width: 1175px;">
+										<div class="box nowrap">
+											<div style=" flex-grow:1">开始时间 ： <input id="startTime" name="startTime"
+													type="text" class="form-control" placeholder=""
+													lay-verify="createtime" placeholder="年-月-日  " autocomplete="off"
+													class="layui-input"></div>
+											<div style=" flex-grow:1">结束时间 ： <input id="endTime" name="endTime"
+													type="text" class="form-control" placeholder=""
+													lay-verify="createtime" placeholder="年-月-日  " autocomplete="off"
+													class="layui-input"></div>
+											<div style=" flex-grow:1">供餐点 ： <input id="storeName" type="text"
+													class="form-control" placeholder="" name="storeName"></div>
+											<div style=" flex-grow:1">供货商 ： <input id="providerName" type="text"
+													class="form-control" placeholder="" name="providerName"></div>
+											<div style=" flex-grow:1"> <button id="export"
+													class="layui-btn layui-btn-sm"> <i class="layui-icon">&#xe601;</i>导出
+												</button></div>
+										</div>
+
+										<div class="box nowrap">
+											<div style=" flex-grow:1">套餐名称 ： <input id="foodName" type="text"
+													class="form-control" placeholder="" name="foodName"></div>
+											<div style=" flex-grow:1">业务员 ： <input id="user" type="text"
+													class="form-control" placeholder="" name="userName"></div>
+											<div style=" flex-grow:1">状态 ：<select name="languagetype"
+													class="form-control" id="state" style="width: 196px;">
+													<option value="">请选择</option>
+													<option value="0">待审核</option>
+													<option value="1">已审核</option>
+												</select></div>
+											<div style=" flex-grow:1"> 城市 <select name="languagetype"
+													class="form-control" id="cityList" style="width: 196px;"></select>
+											</div>
+											<div style="flex-grow:1"><button id="searchBt"
+													class="layui-btn layui-btn-sm">
+													<i class="layui-icon">&#xe615;</i>搜索
+												</button>
+												<button id="resetBt" class="layui-btn layui-btn-sm">
+													<i class="layui-icon">&#xe9aa;</i>重置
+												</button></div>
+										</div>
+									</div>
+								</form>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</header>
+
+			<div>
+				<div class="widget-body no-padding" style="min-width: 1175px;">
+					<table id="dt-table" class="table table-striped table-bordered table-hover"
+						style="width: 100%; text-align: center; vertical-align: middle">
+						<thead>
+							<tr>
+								<th width="2%"><input type="checkbox" name="" value="" /></th>
+								<th width="3%">
+									<center>编号</center>
+								</th>
+								<th width="10%">
+									<center>报损时间</center>
+								<th width="5%">
+									<center>供餐类型</center>
+								<th width="10%">
+									<center>业务员</center>
+								</th>
+								<th width="5%">
+									<center>城市</center>
+								</th>
+								<th width="10%">
+									<center>供餐点</center>
+								</th>
+								<th width="10%">
+									<center>供应商</center>
+								</th>
+								<th width="10%">
+									<center>套餐</center>
+								</th>
+								<th width="3%">
+									<center>单价</center>
+								</th>
+								<th width="3%">
+									<center>数量</center>
+								</th>
+								<th width="3%">
+									<center>合计</center>
+								</th>
+								<th width="6%">
+									<center>二维码数据</center>
+								</th>
+								<th width="4%">
+									<center>状态</center>
+								</th>
+								<th width="10%">
+									<center>备注</center>
+								</th>
+								<th width="7%">
+									<center>操作</center>
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr class="text-c" v-for="item in pageData.rows">
+								<td><input type="checkbox" value="{{ item.userId }}" name="ids"></td>
+								<td>{{ item.id }}</td>
+								<td>{{ item.lossTime }}</td>
+								<td>{{ item.foodType }}</td>
+								<td>{{ item.userName }}</td>
+								<td>{{ item.city}}</td>
+								<td>{{ item.storeName }}</td>
+								<td>{{ item.providerName}}</td>
+								<td>{{ item.foodName }}</td>
+								<td>{{ item.price/100}}</td>
+								<td>{{ item.num }}</td>
+								<td>{{ item.total/100}}</td>
+								<td>{{ item.qrNum }}</td>
+								<td>{{item.stateStr}}</td>
+								<td>{{ item.remark }}</td>
+								<td style="line-height:77px ">
+									<button class="layui-btn layui-btn-xs"
+										onclick="edit('{{item.id}}','{{item.foodName}}')">编辑</button>
+									<button class="layui-btn layui-btn-xs" onclick="check('{{item.id}}')">审核</button>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<div v-show="pageData.total > 0" class="laypage_main laypageskin_default" style="margin-top: 10px">
+						<div class="l">
+							<span> 每页 <select name="pageSizeSelect" id="pageSizeSelect"
+									style="vertical-align: baseline !important; height: 27.6px;" onchange="query()">
+									<option value="10" selected="selected">10</option>
+									<option value="25">25</option>
+									<option value="50">50</option>
+									<option value="100">100</option>
+								</select> 条 显示 {{pageData.rowIndexStart}} 到 {{pageData.rowIndexEnd}} ，共
+								{{pageData.total}} 条
+							</span>
+						</div>
+						<div id="pageNav" class="r"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+</body>
+<!-- 审核 -->
+<div id="mask" style="display: none;text-align: center">
+	<div style="margin:10px 10px">请确认该取餐点报损是否有误</div>
+	<div style="margin:10px 10px">
+		<textarea name="desc" id="msg" placeholder="请填写审核处理信息（100个字符以内）" class="layui-textarea"></textarea>
+	</div>
+	<button class="layui-btn" style="margin-right: 50px" onclick="storeSub()">确定</button>
+	<button class="layui-btn  layui-btn-primary" onclick="cancel()">取消</button>
+</div>
+<!-- 编辑 -->
+<div id="mask2" style="display: none;text-align: center">
+	<div style="text-align: center">{{title}}</div>
+	<input style="margin:10px;width: 480px;text-align: center" type="text" v-model="value" class="layui-input"
+		id="qrNumber">
+	<div style="padding:10px">
+		<button class="layui-btn" style="margin-right: 50px" onclick="updataQR()">确定</button>
+		<button class="layui-btn  layui-btn-primary" onclick="cancel()">取消</button>
+	</div>
+</div>
+
+
+<script src="../../js/constant.js"></script>
+
+<script type="text/javascript" src="../../js/jq.js"></script>
+<!-- <script type="text/javascript" src="../../js/plugin/datatables/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="../../js/plugin/datatables/dataTables.bootstrap.min.js"></script> -->
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../js/dateUtil.js"></script>
+<!-- <script src="https://cdn.bootcss.com/vue/2.5.21/vue.min.js"></script> -->
+<script type="text/javascript" src="../../js/laypage/1.3/laypage.js"></script>
+<script type="text/javascript">
+	var id = getUrlParam("id");
+	var app = new Vue({
+		el: '#app',
+		data: {
+			pageData: {},
+			coupon: {},
+			id: '',
+			title: '',
+			value: "", //二维码数据
+		}
+	});
+
+	layui.use(['form', 'layedit'], function () {
+		var form = layui.form,
+			layer = layui.layer;
+	});
+	layui.use(['form', 'layedit', 'laydate'], function () {
+		var form = layui.form,
+			layer = layui.layer,
+			layedit = layui.layedit,
+			laydate = layui.laydate;
+		var table = layui.table;
+
+
+		var start = laydate.render({
+			elem: '#startTime',
+			done: function (value, date) {}
+		});
+		var end = laydate.render({
+			elem: '#endTime',
+			done: function (value, date) {}
+		});
+	});
+
+	function queryCity() {
+		$("#cityList").empty(); //
+		var url = pageUrl + eatPackageName + "/city/city_list";
+		$.ajax({
+			url: url,
+			type: "GET",
+			error: function () {},
+			success: function (data) {
+
+				var cityList = data.data;
+
+				if (cityList != null && cityList.length != 0) {
+					var option = "<option value=''  selected='selected'>请选择</option>";
+					for (var i = 0; i < cityList.length; i++) {
+
+						option = option + "<option value='" + cityList[i].codeC + "'>" + cityList[i].name +
+							"</option>";
+					}
+					$("#cityList").append(option);
+				}
+			}
+		});
+	}
+
+	function query(pageNo, pageSize) {
+
+		var searchData = $('#search-form').serializeArray();
+		if (!pageNo) {
+			pageNo = 1;
+		}
+		if (!pageSize) {
+			pageSize = $("#pageSizeSelect").val();
+		}
+		if(pageSize == "" || null){
+			pageSize=10
+		}
+		var paramObj = new Object();
+		paramObj.params = searchData;
+		paramObj.pageNum = parseInt(pageNo);
+		paramObj.pageSize = parseInt(pageSize);
+		var startStr = $("#startTime").val();
+		var endStr = $("#endTime").val();
+
+		var storeName = $('#storeName').val();
+		var providerName = $('#providerName').val();
+		var foodName = $('#foodName').val();
+		var userName = $('#user').val();
+		var state = $('#state').val();
+		var city = $('#cityList').val();
+
+		var url = pageUrl + eatExpressPackageName + "/storageLoss/queryLossList";
+		$.ajax({
+			type: "GET",
+			url: url,
+			data: {
+				pageSize: pageSize,
+				pageIndex: pageNo,
+				storeName: storeName,
+				providerName: providerName,
+				foodName: foodName,
+				userName: userName,
+				state: state,
+				city: city,
+				startStr: startStr,
+				endStr: endStr,
+				userId:sessionStorage.ID
+			},
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function (result) {
+				console.log(result);
+				let data = result.rows;
+				data.map((val) => {
+					val.lossTime = val.lossTime.slice(0, 10)
+				})
+				console.log(data);
+				app.pageData = result;
+				laypage({
+					cont: 'pageNav',
+					pages: result.totalPage,
+					curr: result.currentPage,
+					skip: true,
+					groups: 6,
+					jump: function (obj, first) {
+						if (!first) {
+							query(obj.curr);
+						}
+					}
+				});
+			}
+		});
+	}
+
+	function exportData() {
+
+		var startStr = $("#startTime").val();
+		var endStr = $("#endTime").val();
+		var storeName = $('#storeName').val();
+		var providerName = $('#providerName').val();
+		var foodName = $('#foodName').val();
+		var userName = $('#user').val();
+		var state = $('#state').val();
+		var city = $('#cityList').val();
+
+		var url = pageUrl + eatExpressPackageName + "/storageLoss/exportLossData" + "?storeName=" + storeName +
+			"&startStr=" + startStr + "&endStr=" + endStr +
+			"&providerName=" + providerName + "&foodName=" + foodName + "&userName=" + userName + "&state=" + state +
+			"&city=" + city + "&userId=" + sessionStorage.ID;
+		window.location.href = url;
+	}
+
+	function check(id) {
+		this.app.id = id;
+
+		layer.open({
+			type: 1,
+			title: '审核',
+			area: ['400px', '300px'],
+			content: $('#mask') //这里content是一个DOM，注意：最好该元素要存放在body最外层，否则可能被其它的相对元素所影响
+		});
+	}
+
+	function updataQR() {
+		var url = pageUrl + eatExpressPackageName + "/storageLoss/updateLossInfo";
+		$.ajax({
+			url: url,
+			type: "post",
+			data: {
+				lossId: this.app.id,
+				qrNum: $("#qrNumber").val()
+			},
+			error: function () {},
+			success: (data) => {
+				console.log(data);
+				window.cancel();
+				window.query();
+			}
+		});
+	}
+
+	function storeSub() {
+		console.log("值", $("#msg").val());
+
+		var url = pageUrl + eatExpressPackageName + "/storageLoss/updateLossInfo";
+		$.ajax({
+			url: url,
+			type: "post",
+			data: {
+				lossId: this.app.id,
+				remark: $("#msg").val(),
+				state: 1
+			},
+			error: function () {},
+			success: (data) => {
+				console.log(data);
+				window.cancel();
+				window.query();
+			}
+		});
+	}
+
+
+
+	function cancel() {
+		layer.closeAll()
+	}
+
+	//编辑按钮
+	function edit(id, b) {
+		// let val = $("#msg").val()
+		console.log("参数AA", id);
+		console.log("参数BB", b);
+		this.app.id = id;
+		this.app.title = b;
+		var url = pageUrl + eatExpressPackageName + "/storageLoss/queryQRData";
+		$.ajax({
+			url: url,
+			type: "GET",
+			data: {
+				id: id,
+			},
+
+			success: (data) => {
+				console.log("返回二维码数据结果", data);
+				this.app.value = data.data.data;
+				// window.cancel();
+				// window.query();
+			},
+			error: function () {},
+		});
+		layer.open({
+			type: 1,
+			title: '二维码销售数量',
+			area: ['500px', '300px'],
+			content: $('#mask2') //这里content是一个DOM，注意：最好该元素要存放在body最外层，否则可能被其它的相对元素所影响
+		});
+
+		// console.log(this.app.id);
+
+	}
+
+	$(function () {
+		queryCity();
+		$("#searchBt").click(function () {
+			query();
+		});
+		$("#resetBt").click(function () {
+			$('#startTime').val("");
+			$('#endTime').val("");
+			$('#storeName').val("");
+			$('#providerName').val("");
+			$('#foodName').val("");
+			$('#user').val("");
+			query();
+		});
+		$("#export").click(function () {
+			exportData();
+		});
+		query();
+
+	});
+</script>
+
+</html>

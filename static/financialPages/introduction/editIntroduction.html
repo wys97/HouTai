@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en-us" id="extr-page">
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.min.css">
+<link rel="stylesheet" href="../../layui/css/layui.css" media="all" />
+</head>
+<body>
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+		<form class="form-horizontal" onsubmit="return false" id="form">
+			<input type="hidden" id="id" name="id">
+			<input value="ALIYUN" type="hidden" id="fileSource">
+			<fieldset>
+				<div class="form-group">
+					<label class="col-md-2 control-label">标题</label>
+					<div class="col-md-8">
+						<input class="form-control" placeholder="标题" type="text" name="title" id="title"
+							data-bv-notempty="true" data-bv-notempty-message="标题 不能为空">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">内容</label>
+					<div class="col-md-8">
+						<textarea class="form-control" name="content" id="content" style="display: none"></textarea>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-md-2 control-label">排序</label>
+					<div class="col-md-8">
+						<input class="form-control" placeholder="排序" type="text" name="sort" id="sort"
+							data-bv-notempty="true" data-bv-notempty-message="排序 不能为空">
+					</div>
+				</div>
+				<div class="form-actions">
+					<div class="row" align="center">
+						<div class="col-md-12">
+							<button class="btn btn-primary" onclick="location.href='introductionList.html'">返回</button>
+							<button class="btn btn-primary" type="submit" onclick="add()" id="save">
+								<i class="fa fa-save"></i> 保存
+							</button>
+							<button class="btn btn-primary" type="submit" onclick="updateI()" id="update">
+								<i class="fa fa-save"></i> 修改
+							</button>
+						</div>
+					</div>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="../../js/jq.js"></script>
+<script type="text/javascript" src="../../js/plugin/bootstrapvalidator/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="../../js/common.js"></script>
+<script type="text/javascript" src="../../layui/layui.js"></script>
+<script type="text/javascript" src="../../js/my/permission.js"></script>
+<script type="text/javascript">
+var pers = checkPermission();
+var layedit;
+var index;
+var layer;
+layui.use(['layedit','layer'], function(){
+	
+	 layedit = layui.layedit;
+	  
+	  //配置图片上传
+	  layedit.set({
+		  uploadImage: {
+			  url: domainName + '/zuul/api-f/files/layui?fileSource=' + $("#fileSource").val(), //接口url
+			  type: 'post'
+		  }
+	  });
+	  
+	  index=layedit.build('content'); //建立编辑器
+	  initData();
+	  
+	  layer = layui.layer;
+});
+
+function initData(){
+	var introductionId=getUrlParam("introductionId");
+	var sign=getUrlParam("sign");
+	//添加
+	if(sign==null||sign==""){
+		$("#save").show();
+		$("#update").hide();
+	}else{//编辑
+		$("#save").hide();
+		$("#update").show();
+		
+		$("#id").val(introductionId);
+		
+		//判断权限
+		if ($.inArray("financial:introduction:update", pers) < 0) {
+			layer.msg("未授权");
+			$("#update").attr("disabled",true);
+			return "";
+		}
+		
+		//获取详细信息
+		$.ajax({
+			type : 'get',
+			url : domainName + '/api-P2P/pfIntroduction/queryOne/'+introductionId,
+			success : function(data) {
+				if(data!=null){
+					$("#title").val(data.title);
+					layedit.setContent(index,data.content);
+					$("#sort").val(data.sort);
+				}
+			}
+		});
+	}
+}
+
+function add(){
+	$('#form').bootstrapValidator();
+	//定义一个校验器
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	//执行校验
+	bootstrapValidator.validate();
+	//判断校验结果
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+	$("#content").val(layedit.getContent(index));
+    var formdata = $("#form").serializeObject();
+    
+	$.ajax({
+		type : 'post',
+		url : domainName + '/api-P2P/pfIntroduction',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(formdata),
+		success : function(data) {
+			layer.msg("成功", {shift: -1, time: 1000}, function(){
+                location.href = "introductionList.html";
+            });
+		}
+	}); 
+}
+
+
+function updateI(){
+	$('#form').bootstrapValidator();
+	var bootstrapValidator = $("#form").data('bootstrapValidator');
+	bootstrapValidator.validate();
+    if(!bootstrapValidator.isValid()){
+	   return;
+    }
+    
+    $("#content").val(layedit.getContent(index));
+    var formdata = $("#form").serializeObject();
+    
+    $.ajax({
+		type : 'put',
+		url : domainName + '/api-P2P/pfIntroduction',
+		contentType: "application/json; charset=utf-8",  
+		data : JSON.stringify(formdata),
+		success : function(data) {
+			layer.msg("成功", {shift: -1, time: 1000}, function(){
+                location.href = "introductionList.html";
+            });
+		}
+	}); 
+}
+</script>
+</body>
+</html>

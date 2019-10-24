@@ -1,0 +1,168 @@
+*{
+    font: 13px/1.5 '微软雅黑', Verdana, Helvetica, Arial, sans-serif;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -box-sizing: border-box;
+    padding:0;
+    margin:0;
+    list-style:none;
+    box-sizing: border-box;
+}
+
+body,html{
+    height:100%;
+    overflow:hidden;
+}
+
+body{
+    background:url(../img/login/beijing.png) no-repeat center;
+    background-size: cover;
+}
+
+a{
+    color:#27A9E3;
+    text-decoration:none;
+    cursor:pointer;
+}
+
+.all{
+	width:100%;
+	height:100%;
+}
+
+.imge{
+	min-height: 100%;
+    width: 65%;
+	float: left;
+	box-sizing: border-box;
+	background:url(../img/login/tu.png) no-repeat center;
+    background-size: 70% 70%;
+
+}
+
+.login{
+	min-height: 100%;
+    width: 35%;
+	float: left;
+	margin-left: auto;
+    margin-right:0px;
+    border-radius: 4px;
+    box-sizing: border-box;
+    float:left;
+    background: rgb(44, 177, 176)
+}
+
+.content{
+    background:url(../img/logo/logo.png) no-repeat center;
+	background-size: 100% 600px;
+	margin:50px auto 0 auto;
+	min-height: 600px;
+    max-width: 70%;
+    margin-left: auto;
+    margin-right:auto;
+    border-radius: 4px;
+    box-sizing: border-box;
+    text-align:center;
+}
+
+.message{
+    margin: 0 auto;
+    padding: 40% 0 8% 0;
+    position: relative;
+    color: #000;
+    font-size: 28px;
+}
+
+.formclass{
+	margin: 0 auto 0 auto;
+    max-width: 70%;
+	box-sizing: border-box;
+}
+
+input[type=text],
+input[type=file],
+input[type=password],
+input[type=email], select {
+    border: 1px solid #dddddd;
+    vertical-align: middle;
+    border-radius: 10px;
+    height: 50px;
+    padding: 0px 16px;
+    font-size: 14px;
+    color: #555555;
+    outline:none;
+    width:80%;
+    padding-left:50px;
+}
+
+input[type=text]:focus,
+input[type=file]:focus,
+input[type=password]:focus,
+input[type=email]:focus, select:focus {
+    border: 1px solid #79b42a;
+}
+
+#username{
+    background:url(../img/login/account.png) no-repeat left center;
+    background-position: 5% 50%;
+}
+
+#password{
+	background:url(../img/login/password.png) no-repeat left center;
+    background-position: 5% 50%;
+}
+
+hr.hr15 {
+    height: 25px;
+    border: none;
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+}
+
+hr.hr20 {
+    height: 50px;
+    border: none;
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+}
+
+input[type=submit],
+button{
+	background:url(../img/login/login.png) no-repeat center;
+	max-width: 80%;
+	display: inline-block;
+	vertical-align: middle;
+	padding: 12px 20px;
+	margin: 0px;
+    font-size: 16px;
+    letter-spacing: 5px;
+	line-height: 20px;
+	text-align: center;
+	white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    color: #ffffff;
+    border-radius: 10px;
+    border: none;
+    -webkit-appearance: none;
+    outline:none;
+}
+
+a.logo{
+    display: block;
+    height: 58px;
+    width: 167px;
+    margin: 0 auto 30px auto;
+    background-size: 167px 42px;
+}
+
+.copyright{
+    font-size:14px;
+    color:rgba(255,255,255,0.85);
+    display:block;
+    position:absolute;
+    bottom:15px;
+    right:15px;
+}

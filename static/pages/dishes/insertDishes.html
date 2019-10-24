@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	<link rel="stylesheet" href="../../css/elementUI.css">
+	<link rel="stylesheet" href="../../css/newstyle.css">
+	<!-- <link rel="stylesheet" href="../../css/elementUItheme/button.css"> -->
+	<script src="../../js/vuejs/2.6.10/vue.js"></script>
+	<script src="../../js/constant.js"></script>
+	<script src="../../js/axios.min.js"></script>
+	<script src="../../js/elemenyUI.js"></script>
+	<style>
+		.input {
+			width: 300px;
+		}
+		.avatar-uploader .el-upload {
+			border: 1px dashed #d9d9d9;
+			border-radius: 6px;
+			cursor: pointer;
+			position: relative;
+			overflow: hidden;
+		}
+		.avatar-uploader .el-upload:hover {
+			border-color: #409EFF;
+		}
+		.avatar-uploader-icon {
+			font-size: 28px;
+			color: #8c939d;
+			width: 178px;
+			height: 178px;
+			line-height: 178px;
+			text-align: center;
+		}
+		.avatar {
+			width: 178px;
+			height: 178px;
+			display: block;
+		}
+
+        .marginL40{
+            margin-left:40px
+        }
+        .margin{
+      
+            margin-top: 20px;
+            margin-bottom: 20px
+        }
+        .marginR{
+            margin-right: 40px;
+        }
+        .marginL80{
+            margin-left:120px
+        }
+		.disabled .el-upload--picture-card {
+
+		display: none;
+
+		}
+		.none1{
+			display: none
+		}
+	</style>
+</head>
+
+<body>
+	<div id="app">
+		<div class="margin">
+			<span class="marginL40" style="margin-right:10px">菜品名称</span>
+			<el-input class="input" v-model="name" placeholder="请输入菜品名称"></el-input>
+		</div>
+		<div class="margin">
+			<span class="marginL40" style="margin-right:10px">菜品描述</span>
+			<el-input class="input" v-model="remake" placeholder="请输入菜品描述"></el-input>
+		</div>
+		<div class="margin ">
+			<span class="marginL40 marginR">城市</span>
+			<el-select v-model="city" filterable placeholder="请选择城市">
+				<el-option v-for="item in citySelectData"  :key="item.codeC" :label="item.name" :value="item.codeC"></el-option>
+			</el-select>
+		</div>
+		<div class="margin ">
+			<span class="marginL40 marginR">类型</span>
+			<el-select v-model="type" placeholder="请选择类型">
+				<el-option v-for="item in typeSelectData" :key="item.name" :label="item.name" :value="item.value"></el-option>
+			</el-select>
+		</div>
+		<div class="">
+			<span class="marginL40">商品大图</span>
+			<el-upload class="marginL80" :class="{disabled:dishesUrl !=''}" :action="url" :limit="dishesMainImgList" :on-exceed="mainLimit" list-type="picture-card" :before-upload="detailImgBeforeUpload" :on-preview="seeMainImg" :on-success="mainUpload" :on-remove="mainRemove">
+				<i class="el-icon-plus"></i>
+			</el-upload>
+			<el-dialog :visible.sync="dialogVisible" size="tiny">
+				<img width="100%" :src="dialogImageUrl" alt="">
+			</el-dialog>
+        </div>
+        <div>
+            <span class="marginL40">商品详情</span>
+            <el-upload class="marginL80" multiple :action="url" :limit="detailImgLimit" :on-exceed="detailLimit" list-type="picture-card" :before-upload="detailImgBeforeUpload" :on-preview="seeDetailImg" :on-success="detailUpload" :on-remove="detailRemove">
+                <i class="el-icon-plus"></i>
+            </el-upload>
+            <el-dialog :visible.sync="dialogVisible" size="tiny">
+                <img width="100%" :src="dialogImageUrl" alt="">
+            </el-dialog>
+        </div>
+        <div style="margin: 20px 0 20px 120px">
+            <el-button type="primary" @click="sub">提交</el-button>
+            <el-button type="info" @click="back">返回</el-button>
+        </div>
+	</div>
+</body>
+<script>
+	new Vue({
+		el: "#app",
+		data: {
+			dishesMainImgList:1,			//商品大图图片个数限制
+			detailImgLimit:4,				//商品详情图片个数限制
+            url:"",     					//图片上传地址
+			name: "",           			//菜品名
+			remake: "",         			//菜品描述
+			city: "",           			//城市ID
+			type: "",           			//菜品类型
+            dishesImg:"",       			//商品图片ID
+            dishesUrl: '',       			//商品图片URL
+            dishesDetailsImg:"",    		//商品详情图片ID
+			citySelectData: [],
+			typeSelectData: [{
+				name: "菜品",
+				value: "1"
+			}, {
+				name: "米饭",
+				value: "2"
+			}, {
+				name: "食杂",
+				value: "3"
+            }],
+            dialogImageUrl: '',
+
+        dialogVisible: false,
+		arr:[]
+		},
+		methods: {
+            back(){
+                window.location.href = "./selectDishes.html"
+			},
+			
+			//上传商品大图文件超出个数限制时的钩子
+			mainLimit(files, fileList){
+				if(files.length >= 1){
+					this.$message.error("最多只能上传一张图片")
+				}
+			},
+
+			//商品大图上传成功时的钩子
+			mainUpload(files, fileList){
+				this.dishesUrl = files.data.src;
+				this.dishesImg = files.data.id;
+			},
+
+			//商品大图上删除的钩子
+			mainRemove(file, fileList) {
+				if(file.code == "07001"){
+					this.$message.error("上传图片失败或图片不存在")
+				}
+				this.dishesUrl = "";
+				this.dishesImg = "";
+			},
+
+			//商品大图查看时的钩子
+			seeMainImg(file){
+				this.dialogImageUrl = file.url;
+                this.dialogVisible = true;
+			},
+
+		
+			//详情图片上传之前处理
+			detailImgBeforeUpload(file) {
+				const isJPG = file.type === "image/jpeg" || "image/png" || "image/jpg";
+				const isLt1M = file.size / 1024 / 1024 < 1;
+				if (!isJPG) {
+				this.$message.error('请传入JPEG、PNG、JPG格式图片!');
+				}
+				if (!isLt1M) {
+				this.$message.error('上传图片大小不能超过 1M!');
+				}
+				return isJPG && isLt1M;
+			},
+
+			//详情图片超出数量
+			detailLimit(files, fileList){
+				if(files.length > 4){
+					this.$message.error("最多只能上传四张图片")
+				}
+				
+				if(fileList.length >= 4){
+					this.$message.error("最多只能上传四张图片")
+				}
+			},
+
+			//详情上传图片成功
+            detailUpload(res, file) {
+				this.dishesDetailsImg = this.dishesDetailsImg + res.data.id + " ";
+			},
+			
+			//详情图片删除
+            detailRemove(file, fileList) {
+                let str = ""
+                let data = fileList.map((val) => {
+                    str = str +  val.response.data.id + " ";
+                })
+                this.dishesDetailsImg = str;
+			},
+			
+			//查看详情图片
+            seeDetailImg(file) {
+                this.dialogImageUrl = file.url;
+                this.dialogVisible = true;
+            },
+            sub(){
+				if(this.name == ""){
+					this.$message.error("请输入菜品名称") 
+					return
+				}
+				if(this.remake == ""){
+					this.$message.error("请输入菜品描述名称") 
+					return
+				}
+				if(this.city == ""){
+					this.$message.error("请输入选择城市") 
+					return
+				}
+				if(this.type == ""){
+					this.$message.error("请输入选择类型") 
+					return
+				}
+				if(this.dishesImg == ""){
+					this.$message.error("请最少上传一张图片") 
+					return
+				}
+				
+				if(this.dishesDetailsImg == ""){
+					this.$message.error("请最少上传一张商品详情图片") 
+					return
+				}
+				
+                let data = {
+                    dishesName:this.name,
+			        dishesRemake:this.remake,
+                    codeC :this.city,
+			        type:this.type,
+                    dishesImg :this.dishesImg,
+                    dishesUrl:this.dishesUrl,
+                    dishesDetailsImg:this.dishesDetailsImg,
+                    id:"",
+                    file:"",
+					userId:sessionStorage.ID
+                }
+                axios({
+					method: 'post',
+					url: pageUrl + eatPackageName + '/dishesManager/insertDishes',
+					data,
+				})
+				.then((response) => {
+					if(response.data.status === "success"){
+						this.$alert('添加菜品成功', '提示', {
+						confirmButtonText: '确定',
+							callback: action => {
+								window.location.href = "./selectDishes.html"
+							}
+						});
+					}
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+            }
+		},
+		created() {
+            //获取城市列表
+			axios({
+                method: 'post',
+                url: pageUrl + eatPackageName + '/city/getCityAll',
+            })
+            .then((response) => {
+                this.citySelectData = response.data;
+            })
+            .catch(function (error) {
+                console.log(error);
+			});
+			this.url= `${pageUrl}${userPackageName}/fileInfo/wangEditorFileUpload`;		//图片上传接口
+		}
+	})
+</script>
+
+</html>

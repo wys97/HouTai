@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<!-- 引入样式 -->
+<script src="../../js/vuejs/2.6.10/vue.js"></script>
+<link rel="stylesheet" href="../../css/elementUI.css">
+<!-- 引入组件库 -->
+<script src="../../js/elemenyUI.js"></script>
+<script src="../../js/constant.js"></script>
+<script type="text/javascript" src="../../js/libs/jquery-3.3.1.min.js"></script>
+<script src="../../js/axios.min.js"></script>
+<script src="../../js/common.js"></script>
+<style>
+    [v-cloak] {
+        opacity: 0;
+    }
+
+    .formSubmitBox {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .el-table__row--level-1 {
+        background-color: oldlace !important;
+    }
+
+    .font {
+        font-size: 0.28rem;
+        color: #606266;
+    }
+
+    .btn {
+        position: relative;
+        left: 0.2rem;
+        top: 0.1rem;
+        cursor: pointer;
+    }
+
+    .box-card {
+        width: 480px;
+    }
+
+</style>
+
+<body>
+    <div id="app" v-cloak>
+        <!-- <p>新增城市</p> -->
+        <div>
+            <el-form :inline="true" :model="form" class="demo-form-inline">
+
+                <el-form-item label="城市">
+                    <el-select v-model="form.codec" clearable filterable placeholder="请选择城市" @change="changeCity">
+                        <el-option v-for="(item, index) in cityList" :key="item.codeC" :label="item.name" :value="item.codeC"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="取餐点">
+                    <el-select v-model="form.store" clearable filterable placeholder="请选择取餐点">
+                        <el-option v-for="(item, index) in storeList" :key="item.id" :label="item.storeName" :value="item.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="配置状态">
+                    <el-select v-model="form.state" clearable placeholder="请选择配置状态">
+                        <el-option label="未配置" value="1"></el-option>
+                        <el-option label="已配置" value="0"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="onSubmit">查询</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+        <el-table style="width: 100%" :data="tableData" style="width: 100%;margin-bottom: 0.4rem;" border row-key="id">
+            <el-table-column prop="codeName" align="center" label="城市"></el-table-column>
+            <el-table-column prop="storeName" align="center" label="门店名称"></el-table-column>
+            <el-table-column prop="state" align="center"  label="配置状态">
+                <template slot-scope="scope">
+                    <div v-if="scope.row.state > 0">已配置</div>
+                    <div v-if="scope.row.state <= 0">未配置</div>
+                </template>
+            </el-table-column>
+            <el-table-column prop="" align="center" label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="edit(scope.row)">编辑</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination background layout="prev, pager, next" :total="total" @current-change="change"></el-pagination>
+    </div>
+</body>
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            cityList: [],
+            storeList: [],
+            tableData: [],
+            total: 0,
+            form: {
+                codec: "",
+                store: "",
+                state: "",
+                pageIndex: 1,
+                pageSize: 10,
+            },
+            //跳转数据
+            skipData:{
+                codec: "",
+                store: "",
+                state: "",
+            }
+        },
+        methods: {
+            onSubmit() {
+                this.getTableData();
+            },
+
+            change(e) {
+                this.form.pageIndex = e;
+                this.getTableData();
+            },
+
+
+            //请求城市数据
+            getProvince() {
+                axios({ 
+                        method: 'post',
+                        url: pageUrl + eatPackageName + "/city/getCityAll",
+                    })
+                    .then((response) => {
+                        this.cityList = response.data;
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            },
+
+            //市改变时请求门店
+            changeCity(e) {
+                this.form.store = "";
+                axios({
+                        method: 'post',
+                        url: pageUrl + eatPackageName + `/dishesManager/getStoreByCity?storeCity=${e}`,
+                    })
+                    .then((response) => {
+                        this.storeList = response.data;
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            },
+
+            //获取列表数据
+            getTableData() {
+                this.skipData = Object.assign({},this.form)
+                axios({
+                    method: 'get',
+                    url: pageUrl + eatPackageName + "/dishesManager/queryStoreFoodInfoByParams",
+                    params: this.form
+                })
+                .then((response) => {
+                    this.tableData = response.data.rows;
+                    this.total = response.data.total;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            edit(e) {
+                // let url = encodeURI(`./editMenu.html?code_c=${e.store_city}&storeId=${e.storeId}&codeName=${e.codeName}&storeName=${e.storeName}&state=${this.skipData.state}&city=${this.skipData.codec}&store=${this.skipData.store}`);
+                let url = encodeURI(`./editMenu.html?code_c=${e.store_city}&storeId=${e.storeId}&codeName=${e.codeName}&storeName=${e.storeName}`);
+                window.location.href = url;
+                // window.location.href = "./editMenu.html";
+            },
+
+            //初始化页面返回时的取餐点显示问题
+            initCity(){
+                axios({
+                    method: 'post',
+                    url: pageUrl + eatPackageName + `/dishesManager/getStoreByCity?storeCity=${this.form.codec}`,
+                })
+                .then((response) => {
+                    this.storeList = response.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            }
+        },
+        created() {
+            this.getProvince();
+            this.form.codec = GetRequest().codec || "";
+            this.initCity();
+            this.getTableData();
+            this.form.store = GetRequest().store || "";
+            this.form.state = GetRequest().state || "";
+        },
+    })
+</script>
+
+</html>
